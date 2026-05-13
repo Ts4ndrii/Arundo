@@ -13,7 +13,6 @@ const nextConfig = {
       },
     ],
   },
-  // Для CI/CD - ігноруємо помилки лінтера під час збірки
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -21,5 +20,4 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 };
-
 module.exports = nextConfig;
