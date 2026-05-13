@@ -1,0 +1,128 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Lago Kurovychi\n",
+    "place": "Pueblo de Kurovychi, región de Lviv\n",
+    "distance": "14,8 kilómetros\n",
+    "description": "Un cuerpo de agua privado para viajes tranquilos donde la carpa, la carpa cruciana y la carpa herbívora son capturas comunes.\n",
+    "fish": [
+      "carpa\n",
+      "carpa cruciana\n",
+      "carpa herbívora\n"
+    ],
+    "catchCount": "18 peces\n",
+    "center": [
+      49.866,
+      24.884
+    ],
+    "coordinates": [
+      49.866,
+      24.884
+    ]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Estanque Prylbychi\n",
+    "place": "Pueblo de Prylbychi, distrito de Yavoriv\n",
+    "distance": "27,4 kilómetros\n",
+    "description": "Un agua de pesca deportiva con acceso pago y picadas constantes en comederos y flotadores.\n",
+    "fish": [
+      "carpa\n",
+      "dorada\n",
+      "carpa cruciana\n"
+    ],
+    "catchCount": "22 peces\n",
+    "center": [
+      49.956,
+      23.574
+    ],
+    "coordinates": [
+      49.956,
+      23.574
+    ]
+  },
+  {
+    "id": "soluky",
+    "name": "Estanque Soluký\n",
+    "place": "Pueblo de Soluky, distrito de Lviv\n",
+    "distance": "11,1 kilómetros\n",
+    "description": "Un cuerpo de agua cerca de Lviv con buenos bancos y varios lugares para la pesca con comedero y flotador.\n",
+    "fish": [
+      "carpa cruciana\n",
+      "carpa\n",
+      "dorada\n"
+    ],
+    "catchCount": "15 peces\n",
+    "center": [
+      49.867,
+      24.051
+    ],
+    "coordinates": [
+      49.867,
+      24.051
+    ]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Embalse de Shchyrets\n",
+    "place": "Asentamiento de Shchyrets, región de Lviv\n",
+    "distance": "19,6 kilometros\n",
+    "description": "Un cuerpo de agua popular para viajes dirigidos a carpas crucianas, doradas y carpas más pequeñas.\n",
+    "fish": [
+      "carpa cruciana\n",
+      "dorada\n",
+      "carpa\n"
+    ],
+    "catchCount": "13 peces\n",
+    "center": [
+      49.65,
+      23.97
+    ],
+    "coordinates": [
+      49.65,
+      23.97
+    ]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Lago Briukhovychi\n",
+    "place": "Briukhovychi, Leópolis\n",
+    "distance": "9,3 kilómetros\n",
+    "description": "Un conveniente viaje por la ciudad donde los equipos de alimentación flotantes y ligeros funcionan de manera consistente.\n",
+    "fish": [
+      "carpa cruciana\n",
+      "perca\n",
+      "dorada\n"
+    ],
+    "catchCount": "11 peces",
+    "center": [
+      49.91,
+      23.95
+    ],
+    "coordinates": [
+      49.91,
+      23.95
+    ]
+  },
+  {
+    "id": "druzhba",
+    "name": "Base de pesca Druzhba\n",
+    "place": "cerca de Horodok\n",
+    "distance": "30,1 kilómetros\n",
+    "description": "Una base de pesca con múltiples zonas de profundidad y lugares prometedores para los depredadores.\n",
+    "fish": [
+      "carpa\n",
+      "lucio\n",
+      "bagre\n"
+    ],
+    "catchCount": "19 peces",
+    "center": [
+      49.8,
+      23.74
+    ],
+    "coordinates": [
+      49.8,
+      23.74
+    ]
+  }
+]

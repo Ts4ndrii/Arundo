@@ -1,0 +1,128 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Lago Kurovychi\n",
+    "place": "Villaggio Kurovychi, regione di Leopoli\n",
+    "distance": "14,8 km\n",
+    "description": "Uno specchio d'acqua privato per gite tranquille dove carpe, carassi e carpe erbivore sono catture comuni.\n",
+    "fish": [
+      "Carpa\n",
+      "Carassio\n",
+      "Carpa erbivora\n"
+    ],
+    "catchCount": "18 pesci\n",
+    "center": [
+      49.866,
+      24.884
+    ],
+    "coordinates": [
+      49.866,
+      24.884
+    ]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Stagno di Prylbychi\n",
+    "place": "Villaggio di Prylbychi, distretto di Yavoriv\n",
+    "distance": "27,4 km\n",
+    "description": "Un'acqua per la pesca sportiva con accesso a pagamento e abboccate costanti su terminali feeder e float.\n",
+    "fish": [
+      "Carpa\n",
+      "Orata\n",
+      "Carassio\n"
+    ],
+    "catchCount": "22 pesci\n",
+    "center": [
+      49.956,
+      23.574
+    ],
+    "coordinates": [
+      49.956,
+      23.574
+    ]
+  },
+  {
+    "id": "soluky",
+    "name": "Stagno di Soluky\n",
+    "place": "Villaggio Soluky, distretto di Leopoli\n",
+    "distance": "11,1 km\n",
+    "description": "Un bacino idrico vicino a Leopoli con buone sponde e diversi punti per la pesca con feeder e galleggiante.\n",
+    "fish": [
+      "Carassio\n",
+      "Carpa\n",
+      "Orata\n"
+    ],
+    "catchCount": "15 pesci\n",
+    "center": [
+      49.867,
+      24.051
+    ],
+    "coordinates": [
+      49.867,
+      24.051
+    ]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Il bacino idrico di Shchyrets\n",
+    "place": "Insediamento di Shchyrets, regione di Leopoli\n",
+    "distance": "19,6 km\n",
+    "description": "Uno specchio d'acqua popolare per escursioni mirate a carassi, orate e carpe più piccole.\n",
+    "fish": [
+      "Carassio\n",
+      "Orata\n",
+      "Carpa\n"
+    ],
+    "catchCount": "13 pesci\n",
+    "center": [
+      49.65,
+      23.97
+    ],
+    "coordinates": [
+      49.65,
+      23.97
+    ]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Lago Briukhovychi\n",
+    "place": "Briukhovychi, Leopoli\n",
+    "distance": "9,3 km\n",
+    "description": "Un comodo viaggio in città dove gli impianti float e light feeder funzionano costantemente.\n",
+    "fish": [
+      "Carassio\n",
+      "Pesce persico\n",
+      "Orata\n"
+    ],
+    "catchCount": "11 pesci",
+    "center": [
+      49.91,
+      23.95
+    ],
+    "coordinates": [
+      49.91,
+      23.95
+    ]
+  },
+  {
+    "id": "druzhba",
+    "name": "Base di pesca di Druzhba\n",
+    "place": "vicino a Horodok\n",
+    "distance": "30,1 km\n",
+    "description": "Una base di pesca con molteplici zone di profondità e promettenti spot per predatori.\n",
+    "fish": [
+      "Carpa\n",
+      "Luccio\n",
+      "Pesce gatto\n"
+    ],
+    "catchCount": "19 pesci",
+    "center": [
+      49.8,
+      23.74
+    ],
+    "coordinates": [
+      49.8,
+      23.74
+    ]
+  }
+]

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Kurovychi-See\n",
+    "place": "Dorf Kurovychi, Region Lemberg\n",
+    "distance": "14,8 km\n",
+    "description": "Ein privates Gewässer für ruhige Ausflüge, wo häufig Karpfen, Karausche und Graskarpfen gefangen werden.\n",
+    "fish": [
+      "Karpfen\n",
+      "Karausche\n",
+      "Graskarpfen\n"
+    ],
+    "catchCount": "18 Fische\n",
+    "center": [
+      49.866,
+      24.884
+    ],
+    "coordinates": [
+      49.866,
+      24.884
+    ]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Prylbychi-Teich\n",
+    "place": "Dorf Prylbychi, Bezirk Jaworiw\n",
+    "distance": "27,4 km\n",
+    "description": "Ein Sportangelgewässer mit kostenpflichtigem Zugang und stabilen Bissen an Feeder- und Posenmontagen.\n",
+    "fish": [
+      "Karpfen\n",
+      "Brassen\n",
+      "Karausche\n"
+    ],
+    "catchCount": "22 Fische\n",
+    "center": [
+      49.956,
+      23.574
+    ],
+    "coordinates": [
+      49.956,
+      23.574
+    ]
+  },
+  {
+    "id": "soluky",
+    "name": "Soluky-Teich\n",
+    "place": "Dorf Soluky, Bezirk Lemberg\n",
+    "distance": "11,1 km\n",
+    "description": "Ein Gewässer in der Nähe von Lemberg mit guten Ufern und mehreren Stellen zum Feeder- und Posenfischen.\n",
+    "fish": [
+      "Karausche\n",
+      "Karpfen\n",
+      "Brassen\n"
+    ],
+    "catchCount": "15 Fische\n",
+    "center": [
+      49.867,
+      24.051
+    ],
+    "coordinates": [
+      49.867,
+      24.051
+    ]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Shchyrets-Stausee\n",
+    "place": "Siedlung Shchyrets, Region Lemberg\n",
+    "distance": "19,6 km\n",
+    "description": "Ein beliebtes Gewässer für Ausflüge auf Karausche, Brasse und kleinere Karpfen.\n",
+    "fish": [
+      "Karausche\n",
+      "Brassen\n",
+      "Karpfen\n"
+    ],
+    "catchCount": "13 Fische\n",
+    "center": [
+      49.65,
+      23.97
+    ],
+    "coordinates": [
+      49.65,
+      23.97
+    ]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Briukhovychi-See\n",
+    "place": "Brjuchowytschi, Lemberg\n",
+    "distance": "9,3 km\n",
+    "description": "Ein bequemer Ausflug in die Stadt, bei dem Float- und leichte Feeder-Rigs zuverlässig funktionieren.\n",
+    "fish": [
+      "Karausche\n",
+      "Barsch\n",
+      "Brassen\n"
+    ],
+    "catchCount": "11 Fische",
+    "center": [
+      49.91,
+      23.95
+    ],
+    "coordinates": [
+      49.91,
+      23.95
+    ]
+  },
+  {
+    "id": "druzhba",
+    "name": "Fischereibasis Druschba\n",
+    "place": "in der Nähe von Horodok\n",
+    "distance": "30,1 km\n",
+    "description": "Eine Angelbasis mit mehreren Tiefenzonen und vielversprechenden Raubtierplätzen.\n",
+    "fish": [
+      "Karpfen\n",
+      "Hecht\n",
+      "Wels"
+    ],
+    "catchCount": "19 Fische",
+    "center": [
+      49.8,
+      23.74
+    ],
+    "coordinates": [
+      49.8,
+      23.74
+    ]
+  }
+]

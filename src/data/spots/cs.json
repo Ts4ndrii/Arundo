@@ -1,0 +1,128 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Jezero Kurovychi\n",
+    "place": "Vesnice Kurovychi, Lvovská oblast\n",
+    "distance": "14,8 km\n",
+    "description": "Soukromá vodní plocha pro klidné výlety, kde jsou běžnými úlovky kapři, karasi a amur.\n",
+    "fish": [
+      "Kapr\n",
+      "Karas obecný\n",
+      "Amur\n"
+    ],
+    "catchCount": "18 ryb\n",
+    "center": [
+      49.866,
+      24.884
+    ],
+    "coordinates": [
+      49.866,
+      24.884
+    ]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Rybník Prylbychi\n",
+    "place": "Vesnice Prylbychi, okres Yavoriv\n",
+    "distance": "27,4 km\n",
+    "description": "Voda pro sportovní rybolov s placeným přístupem a stálým záběrem na feeder a plovoucí návazce.\n",
+    "fish": [
+      "Kapr\n",
+      "Cejn\n",
+      "Karas obecný\n"
+    ],
+    "catchCount": "22 ryb\n",
+    "center": [
+      49.956,
+      23.574
+    ],
+    "coordinates": [
+      49.956,
+      23.574
+    ]
+  },
+  {
+    "id": "soluky",
+    "name": "Rybník Soluky\n",
+    "place": "Obec Soluky, okres Lvov\n",
+    "distance": "11,1 km\n",
+    "description": "Vodní plocha poblíž Lvova s dobrými břehy a několika místy pro lov na feeder a plavanou.\n",
+    "fish": [
+      "Karas obecný\n",
+      "Kapr\n",
+      "Cejn\n"
+    ],
+    "catchCount": "15 ryb\n",
+    "center": [
+      49.867,
+      24.051
+    ],
+    "coordinates": [
+      49.867,
+      24.051
+    ]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Přehrada Shchyrets\n",
+    "place": "Osada Shchyrets, Lvovská oblast\n",
+    "distance": "19,6 km\n",
+    "description": "Oblíbená vodní plocha pro výlety zaměřené na karase, cejny a menší kapry.\n",
+    "fish": [
+      "Karas obecný\n",
+      "Cejn\n",
+      "Kapr\n"
+    ],
+    "catchCount": "13 ryb\n",
+    "center": [
+      49.65,
+      23.97
+    ],
+    "coordinates": [
+      49.65,
+      23.97
+    ]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Jezero Briukhovychi\n",
+    "place": "Briukhovychi, Lvov\n",
+    "distance": "9,3 km\n",
+    "description": "Pohodlný výlet do města, kde plovoucí a lehké feederové návazce fungují konzistentně.\n",
+    "fish": [
+      "Karas obecný\n",
+      "Okoun\n",
+      "Cejn\n"
+    ],
+    "catchCount": "11 ryb",
+    "center": [
+      49.91,
+      23.95
+    ],
+    "coordinates": [
+      49.91,
+      23.95
+    ]
+  },
+  {
+    "id": "druzhba",
+    "name": "Rybářská základna Družba\n",
+    "place": "poblíž Horodoku\n",
+    "distance": "30,1 km\n",
+    "description": "Rybářská základna s několika hloubkovými zónami a slibnými místy pro dravce.\n",
+    "fish": [
+      "Kapr\n",
+      "Štika\n",
+      "Sumec\n"
+    ],
+    "catchCount": "19 ryb",
+    "center": [
+      49.8,
+      23.74
+    ],
+    "coordinates": [
+      49.8,
+      23.74
+    ]
+  }
+]

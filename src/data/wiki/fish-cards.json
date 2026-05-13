@@ -1,0 +1,502 @@
+{
+  "uk": [
+    {
+      "name": "Короп",
+      "badge": "Трофейний",
+      "summary": "Стабільний фаворит для ставок, водосховищ і рибальських баз.",
+      "habitat": "Ставки, водосховища",
+      "size": "50-120 см",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Щука",
+      "badge": "Хижак",
+      "summary": "Активна риба для річок і озер, особливо на межі заростей.",
+      "habitat": "Річки, озера",
+      "size": "40-110 см",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Окунь",
+      "badge": "Універсальна",
+      "summary": "Частий гість у прибережній зоні та в місцях зі зниженою течією.",
+      "habitat": "Річки, затоки",
+      "size": "15-35 см",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Сом",
+      "badge": "Велика риба",
+      "summary": "Нічний хижак, який полюбляє глибину, ями та закоряжені місця.",
+      "habitat": "Глибокі річки",
+      "size": "70-250 см",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Лящ",
+      "badge": "Мирна",
+      "summary": "Добре працює на тихих ділянках, де є м’яке дно і спокійна вода.",
+      "habitat": "Озера, водосховища",
+      "size": "25-55 см",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Карась",
+      "badge": "Для початку",
+      "summary": "Одна з найпоширеніших риб для аматорської риболовлі в Україні.",
+      "habitat": "Ставки, озера",
+      "size": "12-30 см",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "en": [
+    {
+      "name": "Carp",
+      "badge": "Trophy",
+      "summary": "A stable favorite for ponds, reservoirs and fishing bases.",
+      "habitat": "Ponds, reservoirs",
+      "size": "50-120 cm",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Pike",
+      "badge": "Predator",
+      "summary": "An active fish for rivers and lakes, especially near vegetation lines.",
+      "habitat": "Rivers, lakes",
+      "size": "40-110 cm",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Perch",
+      "badge": "Universal",
+      "summary": "A common catch in coastal zones and low-current areas.",
+      "habitat": "Rivers, bays",
+      "size": "15-35 cm",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Catfish",
+      "badge": "Big fish",
+      "summary": "A nocturnal predator that prefers depth, pits and snag areas.",
+      "habitat": "Deep rivers",
+      "size": "70-250 cm",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Bream",
+      "badge": "Peaceful",
+      "summary": "Works well in calm spots with soft bottom and still water.",
+      "habitat": "Lakes, reservoirs",
+      "size": "25-55 cm",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Crucian carp",
+      "badge": "Starter",
+      "summary": "One of the most common fish for recreational angling in Ukraine.",
+      "habitat": "Ponds, lakes",
+      "size": "12-30 cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "pl": [
+    {
+      "name": "Karp",
+      "badge": "Trofeum",
+      "summary": "Stabilny ulubieniec w stawach, zbiornikach i bazach rybackich.",
+      "habitat": "Stawy, zbiorniki",
+      "size": "50-120cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Szczupak",
+      "badge": "Drapieznik",
+      "summary": "Aktywna ryba w rzekach i jeziorach, szczegolnie na granicy zarniscia.",
+      "habitat": "Rzeki, jeziora",
+      "size": "40-110cm\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Okon",
+      "badge": "Uniwersalna",
+      "summary": "Czesto spotykana w strefach brzegowych i miejscach o slabym pradzie.",
+      "habitat": "Rzeki, zatoki",
+      "size": "15-35cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Sum",
+      "badge": "Duza ryba",
+      "summary": "Nocny drapieznik preferujacy glebokie miejsca i korzenie.",
+      "habitat": "Gleboke rzeki",
+      "size": "70-250cm\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Leszcz",
+      "badge": "Spokojna",
+      "summary": "Dziala dobrze w spokojnych miejscach z miekkim dnem i spokojną woda.",
+      "habitat": "Jeziora, zbiorniki",
+      "size": "25-55cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Karas",
+      "badge": "Dla poczatkujacych",
+      "summary": "Jedna z najpospolitszych ryb do wedzenia rekreacyjnego na Ukrainie.",
+      "habitat": "Stawy, jeziora",
+      "size": "12-30cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "de": [
+    {
+      "name": "Karpfen",
+      "badge": "Trophaee",
+      "summary": "Stabiler Favorit fur Teiche, Stauseen und Angelbasen.",
+      "habitat": "Teiche, Stauseen",
+      "size": "50-120 cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Hecht",
+      "badge": "Rauber",
+      "summary": "Aktiver Fisch in Fluessen und Seen, besonders an Vegetationsgrenzen.",
+      "habitat": "Fluesse, Seen",
+      "size": "40-110 cm\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Barsch",
+      "badge": "Universell\n",
+      "summary": "Haeufiger Fang in Kuestenzonen und schwach stromenden Bereichen.",
+      "habitat": "Fluesse, Buchten",
+      "size": "15-35 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Wels",
+      "badge": "Grossfisch",
+      "summary": "Nachtlicher Rauber, der Tiefe, Gruben und Astzone bevorzugt.",
+      "habitat": "Tiefe Fluesse",
+      "size": "70-250 cm\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Brasse",
+      "badge": "Friedlich",
+      "summary": "Funktioniert gut in ruhigen Bereichen mit weichem Boden und stillem Wasser.",
+      "habitat": "Seen, Stauseen",
+      "size": "25–55 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Karausche",
+      "badge": "Anfaenger",
+      "summary": "Einer der haeufigsten Fische zum Freizeitangeln in der Ukraine.",
+      "habitat": "Teiche, Seen",
+      "size": "12–30 cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "fr": [
+    {
+      "name": "Carpe",
+      "badge": "Trophe",
+      "summary": "Favori stable pour les etangs, les reservoirs et les bases de peche.",
+      "habitat": "Etangs, reservoirs",
+      "size": "50-120 cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Brochet",
+      "badge": "Predateur",
+      "summary": "Poisson actif dans les rivières et les lacs, surtout pres des lignes de vegetation.",
+      "habitat": "Rivieres, lacs",
+      "size": "40-110cm\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Perche",
+      "badge": "Universel",
+      "summary": "Capture frequente dans les zones cotieres et les zones a faible courant.",
+      "habitat": "Rivieres, baies",
+      "size": "15-35cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Silure",
+      "badge": "Gros poisson",
+      "summary": "Predateur nocturne qui prefere la profondeur, les fosses et les zones d'epaves.",
+      "habitat": "Rivieres profondes",
+      "size": "70-250cm\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Breme",
+      "badge": "Pacifique",
+      "summary": "Fonctionne bien dans les endroits calmes avec un fond mou et une eau tranquille.",
+      "habitat": "Lacs, reservoirs",
+      "size": "25-55cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Carassin",
+      "badge": "Debutant",
+      "summary": "L'un des poissons les plus communs pour la peche de loisir en Ukraine.",
+      "habitat": "Etangs, lacs",
+      "size": "12-30cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "es": [
+    {
+      "name": "Carpa",
+      "badge": "Trofeo",
+      "summary": "Favorito estable para estanques, embalses y bases de pesca.",
+      "habitat": "Estanques, embalses",
+      "size": "50-120cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Lucio",
+      "badge": "Depredador",
+      "summary": "Pez activo en rios y lagos, especialmente cerca de lineas de vegetacion.",
+      "habitat": "Rios, lagos",
+      "size": "40-110cm\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Perca",
+      "badge": "Universales\n",
+      "summary": "Captura comun en zonas costeras y areas de baja corriente.",
+      "habitat": "Rios, bahias",
+      "size": "15-35cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Bagre",
+      "badge": "Pez grande",
+      "summary": "Depredador nocturno que prefiere profundidad, fosos y zonas de enganches.",
+      "habitat": "Rios profundos",
+      "size": "70-250cm\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Brema",
+      "badge": "Pacifico",
+      "summary": "Funciona bien en lugares tranquilos con fondo blando y agua tranquila.",
+      "habitat": "Lagos, embalses",
+      "size": "25-55cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Carasio",
+      "badge": "Principiante",
+      "summary": "Uno de los peces mas comunes para la pesca recreativa en Ucrania.",
+      "habitat": "Estanques, lagos",
+      "size": "12-30cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "it": [
+    {
+      "name": "Carpa",
+      "badge": "Trofeo",
+      "summary": "Favorito stabile per stagni, bacini e basi di pesca.",
+      "habitat": "Stagni, bacini",
+      "size": "50-120 cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Luccio",
+      "badge": "Predatore",
+      "summary": "Pesce attivo in fiumi e laghi, specialmente vicino alle linee di vegetazione.",
+      "habitat": "Fiumi, laghi",
+      "size": "40-110 centimetri\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Persico",
+      "badge": "Universale",
+      "summary": "Cattura comune nelle zone costiere e nelle aree a bassa corrente.",
+      "habitat": "Fiumi, baie",
+      "size": "15-35 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Siluro",
+      "badge": "Pesce grande",
+      "summary": "Predatore notturno che preferisce profondita, fosse e zone di legname.",
+      "habitat": "Fiumi profondi",
+      "size": "70-250 centimetri\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Carpa nera",
+      "badge": "Pacifico",
+      "summary": "Funziona bene in luoghi tranquilli con fondo morbido e acqua calma.",
+      "habitat": "Laghi, bacini",
+      "size": "25-55 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Carassio",
+      "badge": "Principiante",
+      "summary": "Uno dei pesci piu comuni per la pesca ricreativa in Ucraina.",
+      "habitat": "Stagni, laghi",
+      "size": "12-30cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "cs": [
+    {
+      "name": "Sumec",
+      "badge": "Trofej",
+      "summary": "Stabilni favorit pro rybniky, nadrze a rybarske baze.",
+      "habitat": "Rybniky, nadrze",
+      "size": "50-120 cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Stdiva",
+      "badge": "Drapez",
+      "summary": "Aktivni ryba v rekach a jezerech, zvlaste na hranici vegetace.",
+      "habitat": "Reky, jezera",
+      "size": "40-110 cm\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Okoun",
+      "badge": "Univerzalni",
+      "summary": "Obycejny lov v pribrezi a mistech se slabym pradem.",
+      "habitat": "Reky, zatoka",
+      "size": "15-35 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Sum velky",
+      "badge": "Velka ryba",
+      "summary": "Nocni drapez, ktery preferuje hloubku, jamy a zachycene oblasti.",
+      "habitat": "Hlubokie reky",
+      "size": "70-250 cm\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Lest",
+      "badge": "Mirny",
+      "summary": "Pracuje dobre v klidnych mistech s mekym dnem a klidnou vodou.",
+      "habitat": "Jezera, nadrze",
+      "size": "25-55 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Karas",
+      "badge": "Zacatecnik",
+      "summary": "Jeden z nejvetsich ryb pro rekreacni loveni na Ukrajine.",
+      "habitat": "Rybniky, jezera",
+      "size": "12-30 cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "ro": [
+    {
+      "name": "Crap",
+      "badge": "Trofeu",
+      "summary": "Favorit stabil pentru iazuri, bazine si baze de pescuit.",
+      "habitat": "Iazuri, bazine",
+      "size": "50-120 cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Stiuca",
+      "badge": "Rapitor",
+      "summary": "Peste activa in rauri si lacuri, mai ales langa liniile de vegetatie.",
+      "habitat": "Rauri, lacuri",
+      "size": "40-110 cm\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Porcus",
+      "badge": "Universal\n",
+      "summary": "Captara frecventa in zonele costiere si ariile cu curent redus.",
+      "habitat": "Rauri, bai",
+      "size": "15-35 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Som",
+      "badge": "Peste mare",
+      "summary": "Rapitor nocturn care prefera adancimea, gropile si zonele cu copaci doborati.",
+      "habitat": "Rauri adanci",
+      "size": "70-250 cm\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Caras",
+      "badge": "Pasnic",
+      "summary": "Functioneaza bine in locuri linistite cu fundul moale si apa linistita.",
+      "habitat": "Lacuri, bazine",
+      "size": "25-55 cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Caras de argint",
+      "badge": "Incepator",
+      "summary": "Unul dintre cei mai comuni pesti pentru pescuitul recreativ in Ucraina.",
+      "habitat": "Iazuri, lacuri",
+      "size": "12-30 cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ],
+  "tr": [
+    {
+      "name": "Sazan",
+      "badge": "Trafe",
+      "summary": "Havuzlar, barajlar ve balik avlama bazlari icin sabit favori.",
+      "habitat": "Havuzlar, barajlar",
+      "size": "50-120cm\n",
+      "visualClass": "bg-gradient-to-br from-amber-300 via-orange-400 to-rose-400"
+    },
+    {
+      "name": "Turna",
+      "badge": "Avci",
+      "summary": "Nehir ve golluklerde aktif balik, ozellikle bitki sinirinda.",
+      "habitat": "Nehirler, goller",
+      "size": "40-110cm\n",
+      "visualClass": "bg-gradient-to-br from-emerald-400 via-teal-500 to-slate-700"
+    },
+    {
+      "name": "Levrek",
+      "badge": "Evrensel",
+      "summary": "Kiyi bolgelerinde ve dusuk akintili alanlarda ortaya cikan balik.",
+      "habitat": "Nehirler, koylar",
+      "size": "15-35cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-700"
+    },
+    {
+      "name": "Yilan baligi",
+      "badge": "Buyuk balik",
+      "summary": "Gece avci, derinlik ve ot iceren alanlari tercih eden.",
+      "habitat": "Derin nehirler",
+      "size": "70-250cm\n",
+      "visualClass": "bg-gradient-to-br from-slate-500 via-slate-700 to-zinc-900"
+    },
+    {
+      "name": "Capoeta",
+      "badge": "Barista",
+      "summary": "Yumusak tabani ve sessiz suyu olan sakin yerlerde iyi calisir.",
+      "habitat": "Goller, barajlar",
+      "size": "25-55cm\n",
+      "visualClass": "bg-gradient-to-br from-sky-200 via-cyan-300 to-blue-400"
+    },
+    {
+      "name": "Sazan",
+      "badge": "Yeni baslayan",
+      "summary": "Ukrayna'daki rekreasyonel balik avilanmasinin en yaygin baliglardan biri.",
+      "habitat": "Havuzlar, goller",
+      "size": "12-30cm",
+      "visualClass": "bg-gradient-to-br from-amber-200 via-yellow-300 to-orange-300"
+    }
+  ]
+}

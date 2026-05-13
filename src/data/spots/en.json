@@ -1,0 +1,68 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Kurovychi Lake",
+    "place": "Kurovychi village, Lviv region",
+    "distance": "14.8 km",
+    "description": "A private water body for calm trips where carp, crucian carp and grass carp are common catches.",
+    "fish": ["Carp", "Crucian carp", "Grass carp"],
+    "catchCount": "18 fish",
+    "center": [49.866, 24.884],
+    "coordinates": [49.866, 24.884]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Prylbychi Pond",
+    "place": "Prylbychi village, Yavoriv district",
+    "distance": "27.4 km",
+    "description": "A sport fishing water with paid access and steady bites on feeder and float rigs.",
+    "fish": ["Carp", "Bream", "Crucian carp"],
+    "catchCount": "22 fish",
+    "center": [49.956, 23.574],
+    "coordinates": [49.956, 23.574]
+  },
+  {
+    "id": "soluky",
+    "name": "Soluky Pond",
+    "place": "Soluky village, Lviv district",
+    "distance": "11.1 km",
+    "description": "A water body near Lviv with good banks and several spots for feeder and float fishing.",
+    "fish": ["Crucian carp", "Carp", "Bream"],
+    "catchCount": "15 fish",
+    "center": [49.867, 24.051],
+    "coordinates": [49.867, 24.051]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Shchyrets Reservoir",
+    "place": "Shchyrets settlement, Lviv region",
+    "distance": "19.6 km",
+    "description": "A popular water body for trips targeting crucian carp, bream and smaller carp.",
+    "fish": ["Crucian carp", "Bream", "Carp"],
+    "catchCount": "13 fish",
+    "center": [49.65, 23.97],
+    "coordinates": [49.65, 23.97]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Briukhovychi Lake",
+    "place": "Briukhovychi, Lviv",
+    "distance": "9.3 km",
+    "description": "A convenient city-side trip where float and light feeder rigs work consistently.",
+    "fish": ["Crucian carp", "Perch", "Bream"],
+    "catchCount": "11 fish",
+    "center": [49.91, 23.95],
+    "coordinates": [49.91, 23.95]
+  },
+  {
+    "id": "druzhba",
+    "name": "Druzhba Fishing Base",
+    "place": "near Horodok",
+    "distance": "30.1 km",
+    "description": "A fishing base with multiple depth zones and promising predator spots.",
+    "fish": ["Carp", "Pike", "Catfish"],
+    "catchCount": "19 fish",
+    "center": [49.8, 23.74],
+    "coordinates": [49.8, 23.74]
+  }
+]
