@@ -58,11 +58,9 @@ const uploadFish   = multer({ storage: fishStorage,   limits: { fileSize:  5 * 1
 const uploadAvatar = multer({ storage: avatarStorage, limits: { fileSize:  2 * 1024 * 1024 } });
 
 // ─── Middleware ───────────────────────────────────────────────
-// ВАЖЛИВО: express.json() з явним charset=utf-8 щоб кирилиця не ламалась
 app.use(express.json({ strict: false }));
 app.use(express.urlencoded({ extended: true }));
 
-// UTF-8 заголовки для всіх відповідей
 app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   next();
@@ -80,79 +78,92 @@ app.use((req, res, next) => {
 const uri = process.env.MONGODB_URI;
 if (!uri) { console.error('❌ MONGODB_URI не знайдено!'); process.exit(1); }
 
-// Явно передаємо utf8 у опціях підключення
-const client = new MongoClient(uri, {
-  connectTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-});
+let client;
 let db;
+let dbConnected = false;
 
+// ── Підключення з кешуванням для Vercel (між викликами функції) ──
 async function connectDB() {
-  try {
-    await client.connect();
-    db = client.db('arundo');
+  if (dbConnected && db) return db;
 
-    await db.collection('users').createIndex({ email: 1 }, { unique: true });
-    await db.collection('waterbodies').createIndex({ location: '2dsphere' });
+  if (!client) {
+    client = new MongoClient(uri, {
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+  }
 
-    // ── Виправлення зіпсованого кодування в існуючих користувачах ──
-    await fixEncodingInDB();
+  await client.connect();
+  db = client.db('arundo');
+  dbConnected = true;
 
-    // ── Seed water types ──
-    const wtCount = await db.collection('watertypes').countDocuments();
-    if (wtCount === 0) {
-      await db.collection('watertypes').insertMany([
-        { name: 'Річка',        emoji: '🌊', description: 'Проточна водойма',            order: 1, createdAt: new Date().toISOString() },
-        { name: 'Озеро',        emoji: '🏞️', description: 'Стояча природна водойма',     order: 2, createdAt: new Date().toISOString() },
-        { name: 'Ставок',       emoji: '💧', description: 'Невелика штучна водойма',     order: 3, createdAt: new Date().toISOString() },
-        { name: 'Водосховище',  emoji: '🏔️', description: 'Штучне велике водосховище',  order: 4, createdAt: new Date().toISOString() },
-        { name: 'Платна',       emoji: '🎣', description: 'Платна рибальська водойма',   order: 5, createdAt: new Date().toISOString() },
-        { name: 'Канал',        emoji: '〰️', description: 'Штучний канал',              order: 6, createdAt: new Date().toISOString() },
-      ]);
-      console.log('✅ Seeded water types');
-    }
+  await db.collection('users').createIndex({ email: 1 }, { unique: true });
+  await db.collection('waterbodies').createIndex({ location: '2dsphere' });
 
-    // ── Seed filter fish ──
-    const ffCount = await db.collection('filterfish').countDocuments();
-    if (ffCount === 0) {
-      await db.collection('filterfish').insertMany([
-        { name: 'Короп',  emoji: '🐟', order: 1, createdAt: new Date().toISOString() },
-        { name: 'Карась', emoji: '🐠', order: 2, createdAt: new Date().toISOString() },
-        { name: 'Щука',   emoji: '🦈', order: 3, createdAt: new Date().toISOString() },
-        { name: 'Окунь',  emoji: '🐡', order: 4, createdAt: new Date().toISOString() },
-        { name: 'Форель', emoji: '🐟', order: 5, createdAt: new Date().toISOString() },
-        { name: 'Лящ',    emoji: '🐟', order: 6, createdAt: new Date().toISOString() },
-      ]);
-      console.log('✅ Seeded filter fish');
-    }
+  await fixEncodingInDB();
+  await seedData();
 
-    console.log('✅ Підключено до MongoDB Atlas — arundo');
-  } catch (err) {
-    console.error('❌ MongoDB:', err.message);
-    process.exit(1);
+  console.log('✅ Підключено до MongoDB Atlas — arundo');
+  return db;
+}
+
+async function seedData() {
+  const wtCount = await db.collection('watertypes').countDocuments();
+  if (wtCount === 0) {
+    await db.collection('watertypes').insertMany([
+      { name: 'Річка',        emoji: '🌊', description: 'Проточна водойма',            order: 1, createdAt: new Date().toISOString() },
+      { name: 'Озеро',        emoji: '🏞️', description: 'Стояча природна водойма',     order: 2, createdAt: new Date().toISOString() },
+      { name: 'Ставок',       emoji: '💧', description: 'Невелика штучна водойма',     order: 3, createdAt: new Date().toISOString() },
+      { name: 'Водосховище',  emoji: '🏔️', description: 'Штучне велике водосховище',  order: 4, createdAt: new Date().toISOString() },
+      { name: 'Платна',       emoji: '🎣', description: 'Платна рибальська водойма',   order: 5, createdAt: new Date().toISOString() },
+      { name: 'Канал',        emoji: '〰️', description: 'Штучний канал',              order: 6, createdAt: new Date().toISOString() },
+    ]);
+    console.log('✅ Seeded water types');
+  }
+
+  const ffCount = await db.collection('filterfish').countDocuments();
+  if (ffCount === 0) {
+    await db.collection('filterfish').insertMany([
+      { name: 'Короп',  emoji: '🐟', order: 1, createdAt: new Date().toISOString() },
+      { name: 'Карась', emoji: '🐠', order: 2, createdAt: new Date().toISOString() },
+      { name: 'Щука',   emoji: '🦈', order: 3, createdAt: new Date().toISOString() },
+      { name: 'Окунь',  emoji: '🐡', order: 4, createdAt: new Date().toISOString() },
+      { name: 'Форель', emoji: '🐟', order: 5, createdAt: new Date().toISOString() },
+      { name: 'Лящ',    emoji: '🐟', order: 6, createdAt: new Date().toISOString() },
+    ]);
+    console.log('✅ Seeded filter fish');
   }
 }
 
-// ─── Виправлення зіпсованого кодування (latin1 → utf8) ───────
+// ─── Middleware: підключення до DB перед кожним запитом ───────
+// Це ключово для Vercel serverless — DB може бути не підключена
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('❌ DB connection failed:', err.message);
+    res.status(503).json({ error: 'База даних недоступна' });
+  }
+});
+
+// ─── Виправлення зіпсованого кодування ───────────────────────
 async function fixEncodingInDB() {
   try {
     const users = await db.collection('users').find({}).toArray();
     let fixed = 0;
     for (const u of users) {
       const fields = {};
-
       if (u.name) {
         const fixedName = tryFixEncoding(u.name);
         if (fixedName !== u.name) fields.name = fixedName;
       }
-
       if (Object.keys(fields).length > 0) {
         await db.collection('users').updateOne(
           { _id: u._id },
           { $set: { ...fields, updatedAt: new Date().toISOString() } }
         );
         fixed++;
-        console.log(`🔧 Fixed encoding for user: ${u._id}`);
       }
     }
     if (fixed > 0) console.log(`✅ Fixed encoding for ${fixed} users`);
@@ -161,17 +172,12 @@ async function fixEncodingInDB() {
   }
 }
 
-// Спроба виправити кодування latin1 → utf8
 function tryFixEncoding(str) {
   if (!str || typeof str !== 'string') return str;
   try {
-    // Перевіряємо чи є зіпсовані символи (типові для latin1/cp1252 замість utf8)
     if (/[\xC0-\xFF][\x80-\xBF]/.test(str) || str.includes('Ð') || str.includes('â')) {
       const fixed = Buffer.from(str, 'latin1').toString('utf8');
-      // Перевіряємо що виправлення дало сенс (є кирилиця або звичайні символи)
-      if (/[\u0400-\u04FF\u0020-\u007E]/.test(fixed)) {
-        return fixed;
-      }
+      if (/[\u0400-\u04FF\u0020-\u007E]/.test(fixed)) return fixed;
     }
   } catch (_) {}
   return str;
@@ -215,8 +221,6 @@ app.post('/api/auth/register', async (req, res) => {
     const count = await db.collection('users').countDocuments();
     const role  = count === 0 ? 'admin' : 'user';
     const passwordHash = await bcrypt.hash(password, 12);
-
-    // Явно зберігаємо ім'я як рядок utf8
     const cleanName = String(name).trim();
 
     const result = await db.collection('users').insertOne({
@@ -264,7 +268,6 @@ app.post('/api/auth/login', async (req, res) => {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ error: 'Невірний email або пароль' });
 
-    // Виправляємо кодування при логіні (на випадок старих записів)
     const fixedName = tryFixEncoding(user.name);
 
     const token = jwt.sign(
@@ -290,9 +293,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
     const user = await db.collection('users').findOne({ _id: new ObjectId(req.user.userId) });
     if (!user) return res.status(404).json({ error: 'Користувача не знайдено' });
-
     const fixedName = tryFixEncoding(user.name);
-
     res.json({
       id: user._id.toString(),
       name: fixedName,
@@ -307,16 +308,12 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 // ============================================================
 //  USERS - PROFILE
 // ============================================================
-
-// Оновити профіль (ім'я та прізвище)
 app.put('/api/users/profile', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
-    if (!name || !String(name).trim()) {
+    if (!name || !String(name).trim())
       return res.status(400).json({ error: "Ім'я обов'язкове" });
-    }
 
-    // Явно зберігаємо як utf8 рядок
     const cleanName = String(name).trim();
 
     await db.collection('users').updateOne(
@@ -325,7 +322,6 @@ app.put('/api/users/profile', authMiddleware, async (req, res) => {
     );
 
     const updatedUser = await db.collection('users').findOne({ _id: new ObjectId(req.user.userId) });
-
     res.json({
       message: 'Профіль оновлено',
       user: {
@@ -337,21 +333,14 @@ app.put('/api/users/profile', authMiddleware, async (req, res) => {
         favoriteWaters: updatedUser.favoriteWaters || [],
       }
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Завантажити аватар
 app.post('/api/users/avatar', authMiddleware, uploadAvatar.single('avatar'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'Файл не завантажено' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'Файл не завантажено' });
 
     const avatarUrl = req.file.path;
-
-    // Видаляємо старий аватар з Cloudinary
     const user = await db.collection('users').findOne({ _id: new ObjectId(req.user.userId) });
     if (user?.avatarPublicId) {
       try { await cloudinary.uploader.destroy(user.avatarPublicId); } catch (_) {}
@@ -359,13 +348,7 @@ app.post('/api/users/avatar', authMiddleware, uploadAvatar.single('avatar'), asy
 
     await db.collection('users').updateOne(
       { _id: new ObjectId(req.user.userId) },
-      {
-        $set: {
-          avatarUrl,
-          avatarPublicId: req.file.filename,
-          updatedAt: new Date().toISOString(),
-        }
-      }
+      { $set: { avatarUrl, avatarPublicId: req.file.filename, updatedAt: new Date().toISOString() } }
     );
 
     res.json({ avatarUrl });
@@ -375,26 +358,20 @@ app.post('/api/users/avatar', authMiddleware, uploadAvatar.single('avatar'), asy
   }
 });
 
-// Отримати улюблені водойми
 app.get('/api/users/favorites', authMiddleware, async (req, res) => {
   try {
     const user = await db.collection('users').findOne({ _id: new ObjectId(req.user.userId) });
     if (!user) return res.status(404).json({ error: 'Користувача не знайдено' });
     res.json({ favorites: user.favoriteWaters || [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Оновити улюблені водойми (повна заміна масиву)
 app.put('/api/users/favorites', authMiddleware, async (req, res) => {
   try {
     const { favorites } = req.body;
-    if (!Array.isArray(favorites)) {
+    if (!Array.isArray(favorites))
       return res.status(400).json({ error: 'favorites має бути масивом' });
-    }
 
-    // Перевіряємо що всі ID є рядками
     const cleanFavorites = favorites.filter(id => typeof id === 'string' && id.trim());
 
     await db.collection('users').updateOne(
@@ -403,49 +380,31 @@ app.put('/api/users/favorites', authMiddleware, async (req, res) => {
     );
 
     res.json({ message: 'Улюблені водойми оновлено', favorites: cleanFavorites });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Додати одну водойму до улюблених
 app.post('/api/users/favorites/:waterId', authMiddleware, async (req, res) => {
   try {
     const { waterId } = req.params;
-
     await db.collection('users').updateOne(
       { _id: new ObjectId(req.user.userId) },
-      {
-        $addToSet: { favoriteWaters: waterId },
-        $set: { updatedAt: new Date().toISOString() },
-      }
+      { $addToSet: { favoriteWaters: waterId }, $set: { updatedAt: new Date().toISOString() } }
     );
-
     const user = await db.collection('users').findOne({ _id: new ObjectId(req.user.userId) });
     res.json({ message: 'Додано до улюблених', favorites: user.favoriteWaters || [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Видалити одну водойму з улюблених
 app.delete('/api/users/favorites/:waterId', authMiddleware, async (req, res) => {
   try {
     const { waterId } = req.params;
-
     await db.collection('users').updateOne(
       { _id: new ObjectId(req.user.userId) },
-      {
-        $pull: { favoriteWaters: waterId },
-        $set: { updatedAt: new Date().toISOString() },
-      }
+      { $pull: { favoriteWaters: waterId }, $set: { updatedAt: new Date().toISOString() } }
     );
-
     const user = await db.collection('users').findOne({ _id: new ObjectId(req.user.userId) });
     res.json({ message: 'Видалено з улюблених', favorites: user.favoriteWaters || [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ============================================================
@@ -455,11 +414,8 @@ app.get('/api/filters/water-types', async (req, res) => {
   try {
     const types = await db.collection('watertypes').find().sort({ order: 1 }).toArray();
     res.json(types.map(t => ({
-      _id: t._id.toString(),
-      name: t.name,
-      emoji: t.emoji || '',
-      description: t.description || '',
-      order: t.order,
+      _id: t._id.toString(), name: t.name, emoji: t.emoji || '',
+      description: t.description || '', order: t.order,
     })));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -471,13 +427,7 @@ app.post('/api/filters/water-types', authMiddleware, requireRole('admin'), async
       return res.status(400).json({ error: "Назва типу обов'язкова" });
 
     const count = await db.collection('watertypes').countDocuments();
-    const doc = {
-      name: name.trim(),
-      emoji: emoji || '',
-      description: description || '',
-      order: count + 1,
-      createdAt: new Date().toISOString(),
-    };
+    const doc = { name: name.trim(), emoji: emoji || '', description: description || '', order: count + 1, createdAt: new Date().toISOString() };
     const result = await db.collection('watertypes').insertOne(doc);
     res.status(201).json({ _id: result.insertedId.toString(), ...doc });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -489,18 +439,11 @@ app.put('/api/filters/water-types/:id', authMiddleware, requireRole('admin'), as
     if (!name || !name.trim())
       return res.status(400).json({ error: "Назва обов'язкова" });
 
-    const update = {
-      name: name.trim(),
-      emoji: emoji || '',
-      description: description || '',
-      updatedAt: new Date().toISOString(),
-    };
     const result = await db.collection('watertypes').updateOne(
       { _id: new ObjectId(req.params.id) },
-      { $set: update }
+      { $set: { name: name.trim(), emoji: emoji || '', description: description || '', updatedAt: new Date().toISOString() } }
     );
-    if (result.matchedCount === 0)
-      return res.status(404).json({ error: 'Тип не знайдено' });
+    if (result.matchedCount === 0) return res.status(404).json({ error: 'Тип не знайдено' });
     res.json({ message: 'Тип оновлено', _id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -508,8 +451,7 @@ app.put('/api/filters/water-types/:id', authMiddleware, requireRole('admin'), as
 app.delete('/api/filters/water-types/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const result = await db.collection('watertypes').deleteOne({ _id: new ObjectId(req.params.id) });
-    if (result.deletedCount === 0)
-      return res.status(404).json({ error: 'Тип не знайдено' });
+    if (result.deletedCount === 0) return res.status(404).json({ error: 'Тип не знайдено' });
     res.json({ message: 'Тип видалено', _id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -520,12 +462,7 @@ app.delete('/api/filters/water-types/:id', authMiddleware, requireRole('admin'),
 app.get('/api/filters/fish', async (req, res) => {
   try {
     const fish = await db.collection('filterfish').find().sort({ order: 1 }).toArray();
-    res.json(fish.map(f => ({
-      _id: f._id.toString(),
-      name: f.name,
-      emoji: f.emoji || '',
-      order: f.order,
-    })));
+    res.json(fish.map(f => ({ _id: f._id.toString(), name: f.name, emoji: f.emoji || '', order: f.order })));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -536,12 +473,7 @@ app.post('/api/filters/fish', authMiddleware, requireRole('admin'), async (req, 
       return res.status(400).json({ error: "Назва риби обов'язкова" });
 
     const count = await db.collection('filterfish').countDocuments();
-    const doc = {
-      name: name.trim(),
-      emoji: emoji || '',
-      order: count + 1,
-      createdAt: new Date().toISOString(),
-    };
+    const doc = { name: name.trim(), emoji: emoji || '', order: count + 1, createdAt: new Date().toISOString() };
     const result = await db.collection('filterfish').insertOne(doc);
     res.status(201).json({ _id: result.insertedId.toString(), ...doc });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -553,17 +485,11 @@ app.put('/api/filters/fish/:id', authMiddleware, requireRole('admin'), async (re
     if (!name || !name.trim())
       return res.status(400).json({ error: "Назва обов'язкова" });
 
-    const update = {
-      name: name.trim(),
-      emoji: emoji || '',
-      updatedAt: new Date().toISOString(),
-    };
     const result = await db.collection('filterfish').updateOne(
       { _id: new ObjectId(req.params.id) },
-      { $set: update }
+      { $set: { name: name.trim(), emoji: emoji || '', updatedAt: new Date().toISOString() } }
     );
-    if (result.matchedCount === 0)
-      return res.status(404).json({ error: 'Рибу не знайдено' });
+    if (result.matchedCount === 0) return res.status(404).json({ error: 'Рибу не знайдено' });
     res.json({ message: 'Оновлено', _id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -571,8 +497,7 @@ app.put('/api/filters/fish/:id', authMiddleware, requireRole('admin'), async (re
 app.delete('/api/filters/fish/:id', authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const result = await db.collection('filterfish').deleteOne({ _id: new ObjectId(req.params.id) });
-    if (result.deletedCount === 0)
-      return res.status(404).json({ error: 'Рибу не знайдено' });
+    if (result.deletedCount === 0) return res.status(404).json({ error: 'Рибу не знайдено' });
     res.json({ message: 'Видалено', _id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -582,15 +507,10 @@ app.delete('/api/filters/fish/:id', authMiddleware, requireRole('admin'), async 
 // ============================================================
 function formatWater(w) {
   return {
-    _id: w._id.toString(),
-    name: w.name,
-    location: w.location,
-    description: w.description || '',
-    images: w.images || [],
-    fishSpecies: w.fishSpecies || [],
-    dominantFish: w.dominantFish || [],
-    bestSeasons: w.bestSeasons || [],
-    waterType: w.waterType || '',
+    _id: w._id.toString(), name: w.name, location: w.location,
+    description: w.description || '', images: w.images || [],
+    fishSpecies: w.fishSpecies || [], dominantFish: w.dominantFish || [],
+    bestSeasons: w.bestSeasons || [], waterType: w.waterType || '',
     createdAt: w.createdAt,
   };
 }
@@ -609,8 +529,7 @@ app.get('/api/water', async (req, res) => {
 app.get('/api/water/nearby', async (req, res) => {
   try {
     const { lat, lng, radius = 10000 } = req.query;
-    if (!lat || !lng)
-      return res.status(400).json({ error: 'Вкажіть lat та lng' });
+    if (!lat || !lng) return res.status(400).json({ error: 'Вкажіть lat та lng' });
     const water = await db.collection('waterbodies').find({
       location: {
         $near: {
@@ -641,8 +560,7 @@ app.post('/api/water', authMiddleware, requireRole('admin'), uploadWater.array('
     const doc = {
       name: String(name).trim(),
       location: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-      description: description || '',
-      images,
+      description: description || '', images,
       fishSpecies: parseJsonField(fishSpecies),
       dominantFish: parseJsonField(dominantFish),
       bestSeasons: parseJsonField(bestSeasons),
@@ -673,18 +591,19 @@ app.put('/api/water/:id', authMiddleware, requireRole('admin'), uploadWater.arra
       currentImages = [...currentImages, ...req.files.map(f => ({ url: f.path, publicId: f.filename }))];
     }
 
-    const update = {
-      name: String(name).trim(),
-      location: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-      description: description || '',
-      images: currentImages,
-      fishSpecies: parseJsonField(fishSpecies),
-      dominantFish: parseJsonField(dominantFish),
-      bestSeasons: parseJsonField(bestSeasons),
-      waterType: waterType || '',
-      updatedAt: new Date().toISOString(),
-    };
-    await db.collection('waterbodies').updateOne({ _id: new ObjectId(req.params.id) }, { $set: update });
+    await db.collection('waterbodies').updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: {
+        name: String(name).trim(),
+        location: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
+        description: description || '', images: currentImages,
+        fishSpecies: parseJsonField(fishSpecies),
+        dominantFish: parseJsonField(dominantFish),
+        bestSeasons: parseJsonField(bestSeasons),
+        waterType: waterType || '',
+        updatedAt: new Date().toISOString(),
+      }}
+    );
     res.json({ message: 'Водойму оновлено', _id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -706,13 +625,9 @@ app.delete('/api/water/:id', authMiddleware, requireRole('admin'), async (req, r
 // ============================================================
 function formatFish(f) {
   return {
-    _id: f._id.toString(),
-    name: f.name,
-    scientificName: f.scientificName || '',
-    description: f.description || '',
-    image: f.image || null,
-    maxWeight: f.maxWeight ?? null,
-    maxLength: f.maxLength ?? null,
+    _id: f._id.toString(), name: f.name, scientificName: f.scientificName || '',
+    description: f.description || '', image: f.image || null,
+    maxWeight: f.maxWeight ?? null, maxLength: f.maxLength ?? null,
   };
 }
 
@@ -738,14 +653,12 @@ app.post('/api/fish', authMiddleware, requireRole('admin'), uploadFish.single('i
       return res.status(400).json({ error: "Назва риби обов'язкова" });
 
     const doc = {
-      name: String(name).trim(),
-      scientificName: scientificName || '',
+      name: String(name).trim(), scientificName: scientificName || '',
       description: description || '',
       image: req.file ? { url: req.file.path, publicId: req.file.filename } : null,
       maxWeight: maxWeight ? Number(maxWeight) : null,
       maxLength: maxLength ? Number(maxLength) : null,
-      createdBy: req.user.userId,
-      createdAt: new Date().toISOString(),
+      createdBy: req.user.userId, createdAt: new Date().toISOString(),
     };
     const result = await db.collection('fish').insertOne(doc);
     res.status(201).json({ message: 'Рибу додано', ...formatFish({ ...doc, _id: result.insertedId }) });
@@ -762,13 +675,13 @@ app.put('/api/fish/:id', authMiddleware, requireRole('admin'), uploadFish.single
     if (!existing) return res.status(404).json({ error: 'Рибу не знайдено' });
 
     const update = {
-      name: String(name).trim(),
-      scientificName: scientificName || '',
+      name: String(name).trim(), scientificName: scientificName || '',
       description: description || '',
       maxWeight: maxWeight ? Number(maxWeight) : null,
       maxLength: maxLength ? Number(maxLength) : null,
       updatedAt: new Date().toISOString(),
     };
+
     if (req.file) {
       if (existing.image?.publicId) {
         try { await cloudinary.uploader.destroy(existing.image.publicId); } catch (_) {}
@@ -780,6 +693,7 @@ app.put('/api/fish/:id', authMiddleware, requireRole('admin'), uploadFish.single
       }
       update.image = null;
     }
+
     await db.collection('fish').updateOne({ _id: new ObjectId(req.params.id) }, { $set: update });
     res.json({ message: 'Рибу оновлено', _id: req.params.id });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -807,11 +721,7 @@ app.get('/api/stats', async (req, res) => {
       db.collection('fish').countDocuments(),
       db.collection('users').countDocuments(),
     ]);
-    res.json({
-      total_water_bodies: totalWater,
-      total_fish_species: totalFish,
-      total_users: totalUsers,
-    });
+    res.json({ total_water_bodies: totalWater, total_fish_species: totalFish, total_users: totalUsers });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -830,25 +740,24 @@ app.use((req, res) => {
 });
 
 // ============================================================
-//  START
+//  EXPORT / START
 // ============================================================
-async function startServer() {
-  await connectDB();
-  
-  // Для Vercel serverless deployment
-  if (process.env.VERCEL) {
-    // Vercel environment - export the app
-    module.exports = app;
-  } else {
-    // Local development - start the server
+
+// Для локальної розробки — запускаємо сервер
+if (!process.env.VERCEL) {
+  connectDB().then(() => {
     app.listen(PORT, () => {
       console.log('════════════════════════════════════');
       console.log('  🎣 ARUNDO — сервер запущено');
       console.log(`  http://localhost:${PORT}`);
       console.log('════════════════════════════════════');
     });
-  }
+  }).catch(err => {
+    console.error('❌ Помилка запуску:', err.message);
+    process.exit(1);
+  });
 }
 
-// Start the server (will be called locally, but not on Vercel)
-startServer();
+// Для Vercel — експортуємо app на верхньому рівні (синхронно!)
+// DB підключається через middleware перед кожним запитом
+module.exports = app;
