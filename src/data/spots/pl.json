@@ -1,0 +1,68 @@
+[
+  {
+    "id": "shuter",
+    "name": "Jezioro \"Shuter\"",
+    "place": "w Pidgirci",
+    "distance": "3.2 km",
+    "description": "Przytulny punkt z dobra glebokoscia, gdzie dobrze dziala lekki zestaw i splawik.",
+    "fish": ["Karas", "Karp", "Bialy amur"],
+    "catchCount": "16 ryb",
+    "center": [49.818, 24.334],
+    "coordinates": [49.818, 24.334]
+  },
+  {
+    "id": "soluky",
+    "name": "Jezioro we wsi Soluky",
+    "place": "Obwod lwowski",
+    "distance": "8.7 km",
+    "description": "Lowisko z roznymi punktami pod drapieznika i spokojna rybe, dobre na krotkie wypady.",
+    "fish": ["Karas", "Karp", "Bialy amur", "Mugil"],
+    "catchCount": "21 ryb",
+    "center": [49.864, 24.052],
+    "coordinates": [49.864, 24.052]
+  },
+  {
+    "id": "zarychchya",
+    "name": "Lowisko kolo Zariczczia",
+    "place": "Idealne na wieczorne wedkowanie",
+    "distance": "12.1 km",
+    "description": "Spokojna strefa przy rozlewisku, gdzie dobrze dziala zaneta i daleki rzut.",
+    "fish": ["Leszcz", "Szczupak", "Okon"],
+    "catchCount": "9 ryb",
+    "center": [49.736, 24.207],
+    "coordinates": [49.736, 24.207]
+  },
+  {
+    "id": "lyubin",
+    "name": "Jezioro Liubin",
+    "place": "Rejon lwowski",
+    "distance": "16.4 km",
+    "description": "Szerokie lowisko ze spokojnymi brzegami i dobra przestrzenia pod feeder.",
+    "fish": ["Karp", "Leszcz", "Karas"],
+    "catchCount": "14 ryb",
+    "center": [49.903, 24.053],
+    "coordinates": [49.903, 24.053]
+  },
+  {
+    "id": "mala-voda",
+    "name": "Male jezioro kolo Briuchowicz",
+    "place": "W poblizu Lwowa",
+    "distance": "18.9 km",
+    "description": "Niewielkie, ale zywe lowisko z dobrymi punktami na wieczorne brania.",
+    "fish": ["Karas", "Okon", "Leszcz"],
+    "catchCount": "11 ryb",
+    "center": [49.891, 23.992],
+    "coordinates": [49.891, 23.992]
+  },
+  {
+    "id": "druzhba",
+    "name": "Jezioro Druzba",
+    "place": "kolo Horodka",
+    "distance": "28.2 km",
+    "description": "Wieksze lowisko na dluzszy wyjazd z kilkoma perspektywicznymi mapami glebokosci.",
+    "fish": ["Karp", "Szczupak", "Sum"],
+    "catchCount": "19 ryb",
+    "center": [49.783, 23.879],
+    "coordinates": [49.783, 23.879]
+  }
+]

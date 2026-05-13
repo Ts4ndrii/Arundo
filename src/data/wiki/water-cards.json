@@ -1,0 +1,802 @@
+{
+  "uk": [
+    {
+      "id": "kurovychi",
+      "name": "Озеро Куровичі",
+      "place": "с. Куровичі, Львівська область",
+      "description": "Приватна водойма для спокійних виїздів і стабільного лову коропа та карася.",
+      "fish": [
+        "Короп",
+        "Карась",
+        "Білий амур"
+      ],
+      "depth": "3-6 м",
+      "access": "Приватний доступ"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Пруд у Прилбичах",
+      "place": "с. Прилбичі, Яворівський район",
+      "description": "Спортивна водойма з платною риболовлею, де працює фідер і поплавок.",
+      "fish": [
+        "Короп",
+        "Лящ",
+        "Карась"
+      ],
+      "depth": "2-5 м",
+      "access": "Спортивна водойма"
+    },
+    {
+      "id": "soluky",
+      "name": "Пруд у Солуках",
+      "place": "с. Солуки, Львівський район",
+      "description": "Зручна водойма біля Львова з чистим берегом і точками під короткий виїзд.",
+      "fish": [
+        "Карась",
+        "Короп",
+        "Лящ"
+      ],
+      "depth": "2-4 м",
+      "access": "Вільний виїзд"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Щирецьке водосховище",
+      "place": "смт Щирець, Львівська область",
+      "description": "Популярна локація для лову карася, ляща та середнього коропа.",
+      "fish": [
+        "Карась",
+        "Лящ",
+        "Короп"
+      ],
+      "depth": "3-7 м",
+      "access": "Публічний берег"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Озеро в Брюховичах",
+      "place": "смт Брюховичі, Львів",
+      "description": "Міський виїзд із добрими точками для поплавка і легкого фідера.",
+      "fish": [
+        "Карась",
+        "Окунь",
+        "Лящ"
+      ],
+      "depth": "1.5-3.5 м",
+      "access": "Спокійний виїзд"
+    },
+    {
+      "id": "druzhba",
+      "name": "База «Дружба»",
+      "place": "біля Городка",
+      "description": "Рибальська база з кількома глибинами та перспективою на хижака.",
+      "fish": [
+        "Короп",
+        "Щука",
+        "Сом"
+      ],
+      "depth": "4-8 м",
+      "access": "Платний ставок"
+    }
+  ],
+  "en": [
+    {
+      "id": "kurovychi",
+      "name": "Kurovychi Lake",
+      "place": "Kurovychi village, Lviv region",
+      "description": "A private water body for calm trips and stable carp and crucian carp catches.",
+      "fish": [
+        "Carp",
+        "Crucian carp",
+        "Grass carp"
+      ],
+      "depth": "3-6 m",
+      "access": "Private access"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Prylbychi Pond",
+      "place": "Prylbychi village, Yavoriv district",
+      "description": "A sport fishing water with paid access where feeder and float rigs work well.",
+      "fish": [
+        "Carp",
+        "Bream",
+        "Crucian carp"
+      ],
+      "depth": "2-5 m",
+      "access": "Sport water"
+    },
+    {
+      "id": "soluky",
+      "name": "Soluky Pond",
+      "place": "Soluky village, Lviv district",
+      "description": "A convenient spot near Lviv with clear banks and short-trip fishing zones.",
+      "fish": [
+        "Crucian carp",
+        "Carp",
+        "Bream"
+      ],
+      "depth": "2-4 m",
+      "access": "Open access"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Shchyrets Reservoir",
+      "place": "Shchyrets settlement, Lviv region",
+      "description": "A popular spot for crucian carp, bream and medium carp.",
+      "fish": [
+        "Crucian carp",
+        "Bream",
+        "Carp"
+      ],
+      "depth": "3-7 m",
+      "access": "Public bank"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Briukhovychi Lake",
+      "place": "Briukhovychi, Lviv",
+      "description": "A city-side trip with good float and light feeder spots.",
+      "fish": [
+        "Crucian carp",
+        "Perch",
+        "Bream"
+      ],
+      "depth": "1.5-3.5 m",
+      "access": "Easy access"
+    },
+    {
+      "id": "druzhba",
+      "name": "Druzhba Fishing Base",
+      "place": "near Horodok",
+      "description": "A fishing base with several depth zones and predator opportunities.",
+      "fish": [
+        "Carp",
+        "Pike",
+        "Catfish"
+      ],
+      "depth": "4-8 m",
+      "access": "Paid pond"
+    }
+  ],
+  "pl": [
+    {
+      "id": "kurovychi",
+      "name": "Jezioro w Kurowyczach",
+      "place": "wieś Kurowycze, obwód lwowski",
+      "description": "Prywatna woda na spokojne wypady, gdzie dobrze biorą karp, karaś i amur biały.",
+      "fish": [
+        "Karp",
+        "Karaś",
+        "Amur biały"
+      ],
+      "depth": "3-6 m\n",
+      "access": "Dostęp prywatny"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Staw w Przyłbiczach",
+      "place": "wieś Przyłbicze, rejon jaworowski",
+      "description": "Łowisko sportowe z płatnym wjazdem, gdzie dobrze pracuje feeder i zestaw spławikowy.",
+      "fish": [
+        "Karp",
+        "Leszcz",
+        "Karaś"
+      ],
+      "depth": "2-5 m\n",
+      "access": "Łowisko sportowe"
+    },
+    {
+      "id": "soluky",
+      "name": "Staw w Solukach",
+      "place": "wieś Soluki, rejon lwowski",
+      "description": "Wygodna woda niedaleko Lwowa z czystym brzegiem i krótkimi miejscami do łowienia.",
+      "fish": [
+        "Karaś",
+        "Karp",
+        "Leszcz"
+      ],
+      "depth": "2-4 m\n",
+      "access": "Swobodny dojazd"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Zbiornik Szczyrzecki",
+      "place": "osiedle Szczyrzecki, obwód lwowski",
+      "description": "Popularne miejsce na karaśa, leszcza i mniejszego karpia.",
+      "fish": [
+        "Karaś",
+        "Leszcz",
+        "Karp"
+      ],
+      "depth": "3-7 m\n",
+      "access": "Publiczny brzeg"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Jezioro w Bryuchowiczach",
+      "place": "Bryuchowycze, Lwów",
+      "description": "Wygodny miejski wypad, gdzie dobrze działają spławik i lekki feeder.",
+      "fish": [
+        "Karaś",
+        "Okoń",
+        "Leszcz"
+      ],
+      "depth": "1,5-3,5 m\n",
+      "access": "Łatwy dojazd"
+    },
+    {
+      "id": "druzhba",
+      "name": "Baza wędkarska „Drużba”",
+      "place": "koło Horodka",
+      "description": "Baza wędkarska z kilkoma głębokościami i szansą na drapieżnika.",
+      "fish": [
+        "Karp",
+        "Szczupak",
+        "Sum"
+      ],
+      "depth": "4-8 m",
+      "access": "Płatny staw"
+    }
+  ],
+  "de": [
+    {
+      "id": "kurovychi",
+      "name": "Kurovychi-See\n",
+      "place": "Dorf Kurovychi, Region Lemberg\n",
+      "description": "Ein privates Gewässer für ruhige Ausflüge und stabile Karpfen- und Karausche-Fänge.\n",
+      "fish": [
+        "Karpfen\n",
+        "Karausche\n",
+        "Graskarpfen\n"
+      ],
+      "depth": "3-6 m\n",
+      "access": "Privater Zugang\n"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Prylbychi-Teich\n",
+      "place": "Dorf Prylbychi, Bezirk Jaworiw\n",
+      "description": "Ein Sportangelgewässer mit kostenpflichtigem Zugang, in dem Feeder- und Posenmontagen gut funktionieren.\n",
+      "fish": [
+        "Karpfen\n",
+        "Brassen\n",
+        "Karausche\n"
+      ],
+      "depth": "2-5 m\n",
+      "access": "Sportwasser\n"
+    },
+    {
+      "id": "soluky",
+      "name": "Soluky-Teich\n",
+      "place": "Dorf Soluky, Bezirk Lemberg\n",
+      "description": "Ein praktischer Ort in der Nähe von Lemberg mit klaren Ufern und Angelzonen für kurze Ausflüge.\n",
+      "fish": [
+        "Karausche\n",
+        "Karpfen\n",
+        "Brassen\n"
+      ],
+      "depth": "2-4 m",
+      "access": "Offener Zugang\n"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Shchyrets-Stausee\n",
+      "place": "Siedlung Shchyrets, Region Lemberg\n",
+      "description": "Ein beliebter Ort für Karausche, Brassen und mittelgroße Karpfen.\n",
+      "fish": [
+        "Karausche\n",
+        "Brassen\n",
+        "Karpfen\n"
+      ],
+      "depth": "3-7 m\n",
+      "access": "Öffentliche Bank\n"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Briukhovychi-See\n",
+      "place": "Brjuchowytschi, Lemberg\n",
+      "description": "Ein Ausflug in die Stadt mit guten Float- und leichten Feeder-Spots.\n",
+      "fish": [
+        "Karausche\n",
+        "Barsch\n",
+        "Brassen\n"
+      ],
+      "depth": "1,5-3,5 m\n",
+      "access": "Einfacher Zugang\n"
+    },
+    {
+      "id": "druzhba",
+      "name": "Fischereibasis Druschba\n",
+      "place": "in der Nähe von Horodok\n",
+      "description": "Eine Angelbasis mit mehreren Tiefenzonen und Raubfischmöglichkeiten.\n",
+      "fish": [
+        "Karpfen\n",
+        "Hecht\n",
+        "Wels"
+      ],
+      "depth": "4-8 m",
+      "access": "Bezahlter Teich"
+    }
+  ],
+  "fr": [
+    {
+      "id": "kurovychi",
+      "name": "Lac Kurovychi\n",
+      "place": "Village de Kurovychi, région de Lviv\n",
+      "description": "Un plan d'eau privé pour des balades calmes et des captures stables de carpes et carassins.\n",
+      "fish": [
+        "Carpe\n",
+        "Carassin\n",
+        "Carpe herbivore\n"
+      ],
+      "depth": "3-6 m\n",
+      "access": "Accès privé\n"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Étang de Prylbychi\n",
+      "place": "Village de Prylbychi, district de Yavoriv\n",
+      "description": "Une eau de pêche sportive avec accès payant où les montages feeder et flotteurs fonctionnent bien.\n",
+      "fish": [
+        "Carpe\n",
+        "Daurade\n",
+        "Carassin\n"
+      ],
+      "depth": "2-5 m\n",
+      "access": "Eau de sport\n"
+    },
+    {
+      "id": "soluky",
+      "name": "Étang de Soluky\n",
+      "place": "Village de Soluky, district de Lviv\n",
+      "description": "Un endroit pratique près de Lviv avec des berges dégagées et des zones de pêche de courte durée.\n",
+      "fish": [
+        "Carassin\n",
+        "Carpe\n",
+        "Daurade\n"
+      ],
+      "depth": "2-4 m",
+      "access": "Accès ouvert\n"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Réservoir Shchyrets\n",
+      "place": "Village de Shchyrets, région de Lviv\n",
+      "description": "Un endroit apprécié pour les carassins, les brèmes et les carpes moyennes.\n",
+      "fish": [
+        "Carassin\n",
+        "Daurade\n",
+        "Carpe\n"
+      ],
+      "depth": "3-7 m\n",
+      "access": "Banque publique\n"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Lac Briukhovychi\n",
+      "place": "Brioukhovychi, Lviv\n",
+      "description": "Un voyage en ville avec de bons spots de flottaison et de lumière.\n",
+      "fish": [
+        "Carassin\n",
+        "Perche\n",
+        "Daurade\n"
+      ],
+      "depth": "1,5-3,5 m\n",
+      "access": "Accès facile\n"
+    },
+    {
+      "id": "druzhba",
+      "name": "Base de pêche de Droujba\n",
+      "place": "près d'Horodok\n",
+      "description": "Une base de pêche avec plusieurs zones de profondeur et opportunités de prédateurs.\n",
+      "fish": [
+        "Carpe\n",
+        "Brochet\n",
+        "Poisson-chat\n"
+      ],
+      "depth": "4-8 m",
+      "access": "Étang payant"
+    }
+  ],
+  "es": [
+    {
+      "id": "kurovychi",
+      "name": "Lago Kurovychi\n",
+      "place": "Pueblo de Kurovychi, región de Lviv\n",
+      "description": "Un espejo de agua privado para excursiones tranquilas y capturas estables de carpas y carpas crucianas.\n",
+      "fish": [
+        "carpa\n",
+        "carpa cruciana\n",
+        "carpa herbívora\n"
+      ],
+      "depth": "3-6 metros\n",
+      "access": "Acceso privado\n"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Estanque Prylbychi\n",
+      "place": "Pueblo de Prylbychi, distrito de Yavoriv\n",
+      "description": "Un agua de pesca deportiva con acceso pago donde los aparejos de alimentación y flotación funcionan bien.\n",
+      "fish": [
+        "carpa\n",
+        "dorada\n",
+        "carpa cruciana\n"
+      ],
+      "depth": "2-5 metros\n",
+      "access": "agua deportiva\n"
+    },
+    {
+      "id": "soluky",
+      "name": "Estanque Soluký\n",
+      "place": "Pueblo de Soluky, distrito de Lviv\n",
+      "description": "Un lugar conveniente cerca de Lviv con orillas despejadas y zonas de pesca de corta duración.\n",
+      "fish": [
+        "carpa cruciana\n",
+        "carpa\n",
+        "dorada\n"
+      ],
+      "depth": "2-4 metros",
+      "access": "acceso abierto\n"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Embalse de Shchyrets\n",
+      "place": "Asentamiento de Shchyrets, región de Lviv\n",
+      "description": "Un lugar popular para la carpa cruciana, la dorada y la carpa mediana.\n",
+      "fish": [
+        "carpa cruciana\n",
+        "dorada\n",
+        "carpa\n"
+      ],
+      "depth": "3-7 metros\n",
+      "access": "banco publico\n"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Lago Briukhovychi\n",
+      "place": "Briukhovychi, Leópolis\n",
+      "description": "Un viaje por la ciudad con buenos lugares para flotar y alimentarse de luz.\n",
+      "fish": [
+        "carpa cruciana\n",
+        "perca\n",
+        "dorada\n"
+      ],
+      "depth": "1,5-3,5 metros\n",
+      "access": "Fácil acceso\n"
+    },
+    {
+      "id": "druzhba",
+      "name": "Base de pesca Druzhba\n",
+      "place": "cerca de Horodok\n",
+      "description": "Una base de pesca con varias zonas de profundidad y oportunidades de depredadores.\n",
+      "fish": [
+        "carpa\n",
+        "lucio\n",
+        "bagre\n"
+      ],
+      "depth": "4-8 metros",
+      "access": "Estanque pagado"
+    }
+  ],
+  "it": [
+    {
+      "id": "kurovychi",
+      "name": "Lago Kurovychi\n",
+      "place": "Villaggio Kurovychi, regione di Leopoli\n",
+      "description": "Uno specchio d'acqua privato per gite tranquille e catture stabili di carpe e carassi.\n",
+      "fish": [
+        "Carpa\n",
+        "Carassio\n",
+        "Carpa erbivora\n"
+      ],
+      "depth": "3-6 milioni\n",
+      "access": "Accesso privato\n"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Stagno di Prylbychi\n",
+      "place": "Villaggio di Prylbychi, distretto di Yavoriv\n",
+      "description": "Un'acqua per la pesca sportiva con accesso a pagamento dove funzionano bene i terminali feeder e float.\n",
+      "fish": [
+        "Carpa\n",
+        "Orata\n",
+        "Carassio\n"
+      ],
+      "depth": "2-5 m\n",
+      "access": "Acqua sportiva\n"
+    },
+    {
+      "id": "soluky",
+      "name": "Stagno di Soluky\n",
+      "place": "Villaggio Soluky, distretto di Leopoli\n",
+      "description": "Un posto conveniente vicino a Leopoli con sponde libere e zone di pesca a breve distanza.\n",
+      "fish": [
+        "Carassio\n",
+        "Carpa\n",
+        "Orata\n"
+      ],
+      "depth": "2-4 milioni",
+      "access": "Accesso aperto\n"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Il bacino idrico di Shchyrets\n",
+      "place": "Insediamento di Shchyrets, regione di Leopoli\n",
+      "description": "Uno spot popolare per carassi, breme e carpe medie.\n",
+      "fish": [
+        "Carassio\n",
+        "Orata\n",
+        "Carpa\n"
+      ],
+      "depth": "3-7 metri\n",
+      "access": "Banca pubblica\n"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Lago Briukhovychi\n",
+      "place": "Briukhovychi, Leopoli\n",
+      "description": "Un viaggio in città con buon galleggiamento e punti di alimentazione leggeri.\n",
+      "fish": [
+        "Carassio\n",
+        "Pesce persico\n",
+        "Orata\n"
+      ],
+      "depth": "1,5-3,5 m\n",
+      "access": "Facile accesso\n"
+    },
+    {
+      "id": "druzhba",
+      "name": "Base di pesca di Druzhba\n",
+      "place": "vicino a Horodok\n",
+      "description": "Una base di pesca con diverse zone di profondità e opportunità di predatori.\n",
+      "fish": [
+        "Carpa\n",
+        "Luccio\n",
+        "Pesce gatto\n"
+      ],
+      "depth": "4-8 metri",
+      "access": "Stagno a pagamento"
+    }
+  ],
+  "cs": [
+    {
+      "id": "kurovychi",
+      "name": "Jezero Kurovychi\n",
+      "place": "Vesnice Kurovychi, Lvovská oblast\n",
+      "description": "Soukromá vodní plocha pro klidné výlety a stabilní úlovky kaprů a karasů.\n",
+      "fish": [
+        "Kapr\n",
+        "Karas obecný\n",
+        "Amur\n"
+      ],
+      "depth": "3-6 m\n",
+      "access": "Soukromý přístup\n"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Rybník Prylbychi\n",
+      "place": "Vesnice Prylbychi, okres Yavoriv\n",
+      "description": "Voda pro sportovní rybolov s placeným přístupem, kde dobře fungují feederové a plovákové návazce.\n",
+      "fish": [
+        "Kapr\n",
+        "Cejn\n",
+        "Karas obecný\n"
+      ],
+      "depth": "2-5 m\n",
+      "access": "Sportovní voda\n"
+    },
+    {
+      "id": "soluky",
+      "name": "Rybník Soluky\n",
+      "place": "Obec Soluky, okres Lvov\n",
+      "description": "Pohodlné místo poblíž Lvova s čistými břehy a rybolovnými zónami na krátké výlety.\n",
+      "fish": [
+        "Karas obecný\n",
+        "Kapr\n",
+        "Cejn\n"
+      ],
+      "depth": "2-4 m",
+      "access": "Otevřený přístup\n"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Přehrada Shchyrets\n",
+      "place": "Osada Shchyrets, Lvovská oblast\n",
+      "description": "Oblíbené místo pro karasy, cejny a střední kapry.\n",
+      "fish": [
+        "Karas obecný\n",
+        "Cejn\n",
+        "Kapr\n"
+      ],
+      "depth": "3-7 m\n",
+      "access": "Veřejná banka\n"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Jezero Briukhovychi\n",
+      "place": "Briukhovychi, Lvov\n",
+      "description": "Výlet do města s dobrým splávkem a lehkými feederovými místy.\n",
+      "fish": [
+        "Karas obecný\n",
+        "Okoun\n",
+        "Cejn\n"
+      ],
+      "depth": "1,5-3,5m\n",
+      "access": "Snadný přístup\n"
+    },
+    {
+      "id": "druzhba",
+      "name": "Rybářská základna Družba\n",
+      "place": "poblíž Horodoku\n",
+      "description": "Rybářská základna s několika hloubkovými zónami a možnostmi predátorů.\n",
+      "fish": [
+        "Kapr\n",
+        "Štika\n",
+        "Sumec\n"
+      ],
+      "depth": "4-8 m",
+      "access": "Placený rybník"
+    }
+  ],
+  "ro": [
+    {
+      "id": "kurovychi",
+      "name": "Lacul Kurovici\n",
+      "place": "Satul Kurovychi, regiunea Lviv\n",
+      "description": "Un corp de apă privat pentru excursii calme și capturi stabile de crap și caras.\n",
+      "fish": [
+        "crap\n",
+        "Carasul\n",
+        "Crap de iarbă\n"
+      ],
+      "depth": "3-6 m\n",
+      "access": "Acces privat\n"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Iazul Prylbychi\n",
+      "place": "Satul Prylbychi, districtul Yavoriv\n",
+      "description": "O apă de pescuit sportiv cu acces plătit, unde platformele de alimentare și plutitoare funcționează bine.\n",
+      "fish": [
+        "crap\n",
+        "platica\n",
+        "Carasul\n"
+      ],
+      "depth": "2-5 m\n",
+      "access": "Apa de sport\n"
+    },
+    {
+      "id": "soluky",
+      "name": "Iazul Soluky\n",
+      "place": "Satul Soluky, districtul Lviv\n",
+      "description": "Un loc convenabil lângă Lvov, cu maluri clare și zone de pescuit pentru călătorii scurte.\n",
+      "fish": [
+        "Carasul\n",
+        "crap\n",
+        "platica\n"
+      ],
+      "depth": "2-4 m",
+      "access": "Acces deschis\n"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Rezervorul Shchyrets\n",
+      "place": "Așezare Shchyrets, regiunea Lviv\n",
+      "description": "Un loc popular pentru carasul, platica și crapul mediu.\n",
+      "fish": [
+        "Carasul\n",
+        "platica\n",
+        "crap\n"
+      ],
+      "depth": "3-7 m\n",
+      "access": "Banca publica\n"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Lacul Briukhovici\n",
+      "place": "Briukhovici, Lviv\n",
+      "description": "O excursie în oraș, cu locuri bune de plutire și alimentatoare ușoare.\n",
+      "fish": [
+        "Carasul\n",
+        "biban\n",
+        "platica\n"
+      ],
+      "depth": "1,5-3,5 m\n",
+      "access": "Acces usor\n"
+    },
+    {
+      "id": "druzhba",
+      "name": "Baza de pescuit Druzhba\n",
+      "place": "lângă Horodok\n",
+      "description": "O bază de pescuit cu mai multe zone de adâncime și oportunități de prădători.\n",
+      "fish": [
+        "crap\n",
+        "Stiuca\n",
+        "Somn\n"
+      ],
+      "depth": "4-8 m",
+      "access": "Iaz plătit"
+    }
+  ],
+  "tr": [
+    {
+      "id": "kurovychi",
+      "name": "Kurovychi Gölü\n",
+      "place": "Kurovychi köyü, Lviv bölgesi\n",
+      "description": "Sakin geziler ve sabit sazan ve havuz sazanı avları için özel bir su kütlesi.\n",
+      "fish": [
+        "Sazan\n",
+        "Havuz sazanı\n",
+        "Ot sazanı\n"
+      ],
+      "depth": "3-6m\n",
+      "access": "Özel erişim\n"
+    },
+    {
+      "id": "prylbychi",
+      "name": "Prylbychi Göleti\n",
+      "place": "Prylbychi köyü, Yavoriv bölgesi\n",
+      "description": "Besleyici ve şamandıra teçhizatlarının iyi çalıştığı, ücretli erişime sahip bir spor balıkçılığı suyu.\n",
+      "fish": [
+        "Sazan\n",
+        "Çipura\n",
+        "Havuz sazanı\n"
+      ],
+      "depth": "2-5m\n",
+      "access": "Spor suyu\n"
+    },
+    {
+      "id": "soluky",
+      "name": "Soluky Göleti\n",
+      "place": "Soluky köyü, Lviv bölgesi\n",
+      "description": "Açık kıyılar ve kısa mesafeli balıkçılık bölgeleriyle Lviv yakınında elverişli bir nokta.\n",
+      "fish": [
+        "Havuz sazanı\n",
+        "Sazan\n",
+        "Çipura\n"
+      ],
+      "depth": "2-4m",
+      "access": "Açık erişim\n"
+    },
+    {
+      "id": "shchyrets",
+      "name": "Shchyrets Rezervuarı\n",
+      "place": "Shchyrets yerleşimi, Lviv bölgesi\n",
+      "description": "Havuz sazanı, çipura ve orta boy sazanın popüler noktası.\n",
+      "fish": [
+        "Havuz sazanı\n",
+        "Çipura\n",
+        "Sazan\n"
+      ],
+      "depth": "3-7m\n",
+      "access": "Kamu bankası\n"
+    },
+    {
+      "id": "briukhovychi",
+      "name": "Briukhovychi Gölü\n",
+      "place": "Briukhovychi, Lviv\n",
+      "description": "İyi şamandıra ve hafif besleyici noktaları olan şehir içi bir gezi.\n",
+      "fish": [
+        "Havuz sazanı\n",
+        "Levrek\n",
+        "Çipura\n"
+      ],
+      "depth": "1,5-3,5m\n",
+      "access": "Kolay erişim\n"
+    },
+    {
+      "id": "druzhba",
+      "name": "Druzhba Balıkçılık Üssü\n",
+      "place": "Horodok yakınında\n",
+      "description": "Çeşitli derinlik bölgelerine ve avcı fırsatlarına sahip bir balıkçılık üssü.\n",
+      "fish": [
+        "Sazan\n",
+        "turna balığı\n",
+        "Yayın balığı\n"
+      ],
+      "depth": "4-8m",
+      "access": "Ücretli gölet"
+    }
+  ]
+}

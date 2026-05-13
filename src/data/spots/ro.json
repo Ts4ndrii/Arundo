@@ -1,0 +1,128 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Lacul Kurovici\n",
+    "place": "Satul Kurovychi, regiunea Lviv\n",
+    "distance": "14,8 km\n",
+    "description": "Un corp de apă privat pentru excursii liniștite în care crapul, carasul și crapul de iarbă sunt capturi obișnuite.\n",
+    "fish": [
+      "crap\n",
+      "Carasul\n",
+      "Crap de iarbă\n"
+    ],
+    "catchCount": "18 pești\n",
+    "center": [
+      49.866,
+      24.884
+    ],
+    "coordinates": [
+      49.866,
+      24.884
+    ]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Iazul Prylbychi\n",
+    "place": "Satul Prylbychi, districtul Yavoriv\n",
+    "distance": "27,4 km\n",
+    "description": "O apă de pescuit sportiv cu acces plătit și mușcături constante pe platforme de alimentare și plutitoare.\n",
+    "fish": [
+      "crap\n",
+      "platica\n",
+      "Carasul\n"
+    ],
+    "catchCount": "22 de pești\n",
+    "center": [
+      49.956,
+      23.574
+    ],
+    "coordinates": [
+      49.956,
+      23.574
+    ]
+  },
+  {
+    "id": "soluky",
+    "name": "Iazul Soluky\n",
+    "place": "Satul Soluky, districtul Lviv\n",
+    "distance": "11,1 km\n",
+    "description": "Un corp de apă în apropiere de Lviv, cu maluri bune și mai multe locuri pentru pescuitul la feeder și la plutire.\n",
+    "fish": [
+      "Carasul\n",
+      "crap\n",
+      "platica\n"
+    ],
+    "catchCount": "15 pești\n",
+    "center": [
+      49.867,
+      24.051
+    ],
+    "coordinates": [
+      49.867,
+      24.051
+    ]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Rezervorul Shchyrets\n",
+    "place": "Așezare Shchyrets, regiunea Lviv\n",
+    "distance": "19,6 km\n",
+    "description": "Un corp de apă popular pentru excursii care vizează carasul, platica și crapul mai mic.\n",
+    "fish": [
+      "Carasul\n",
+      "platica\n",
+      "crap\n"
+    ],
+    "catchCount": "13 pești\n",
+    "center": [
+      49.65,
+      23.97
+    ],
+    "coordinates": [
+      49.65,
+      23.97
+    ]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Lacul Briukhovici\n",
+    "place": "Briukhovici, Lviv\n",
+    "distance": "9,3 km\n",
+    "description": "O excursie convenabilă în oraș, în care platformele de alimentare cu plutire și ușoare funcționează constant.\n",
+    "fish": [
+      "Carasul\n",
+      "biban\n",
+      "platica\n"
+    ],
+    "catchCount": "11 pești",
+    "center": [
+      49.91,
+      23.95
+    ],
+    "coordinates": [
+      49.91,
+      23.95
+    ]
+  },
+  {
+    "id": "druzhba",
+    "name": "Baza de pescuit Druzhba\n",
+    "place": "lângă Horodok\n",
+    "distance": "30,1 km\n",
+    "description": "O bază de pescuit cu mai multe zone de adâncime și locuri promițătoare pentru prădători.\n",
+    "fish": [
+      "crap\n",
+      "Stiuca\n",
+      "Somn\n"
+    ],
+    "catchCount": "19 pești",
+    "center": [
+      49.8,
+      23.74
+    ],
+    "coordinates": [
+      49.8,
+      23.74
+    ]
+  }
+]

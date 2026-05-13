@@ -1,0 +1,128 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Lac Kurovychi\n",
+    "place": "Village de Kurovychi, région de Lviv\n",
+    "distance": "14,8km\n",
+    "description": "Un plan d'eau privé pour des balades calmes où carpes, carassins et carpes herbivores sont des captures fréquentes.\n",
+    "fish": [
+      "Carpe\n",
+      "Carassin\n",
+      "Carpe herbivore\n"
+    ],
+    "catchCount": "18 poissons\n",
+    "center": [
+      49.866,
+      24.884
+    ],
+    "coordinates": [
+      49.866,
+      24.884
+    ]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Étang de Prylbychi\n",
+    "place": "Village de Prylbychi, district de Yavoriv\n",
+    "distance": "27,4km\n",
+    "description": "Une eau de pêche sportive avec accès payant et touches régulières sur les montages feeder et flotteurs.\n",
+    "fish": [
+      "Carpe\n",
+      "Daurade\n",
+      "Carassin\n"
+    ],
+    "catchCount": "22 poissons\n",
+    "center": [
+      49.956,
+      23.574
+    ],
+    "coordinates": [
+      49.956,
+      23.574
+    ]
+  },
+  {
+    "id": "soluky",
+    "name": "Étang de Soluky\n",
+    "place": "Village de Soluky, district de Lviv\n",
+    "distance": "11,1km\n",
+    "description": "Un plan d'eau près de Lviv avec de bonnes berges et plusieurs spots pour la pêche au feeder et au flotteur.\n",
+    "fish": [
+      "Carassin\n",
+      "Carpe\n",
+      "Daurade\n"
+    ],
+    "catchCount": "15 poissons\n",
+    "center": [
+      49.867,
+      24.051
+    ],
+    "coordinates": [
+      49.867,
+      24.051
+    ]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Réservoir Shchyrets\n",
+    "place": "Village de Shchyrets, région de Lviv\n",
+    "distance": "19,6km\n",
+    "description": "Un plan d'eau populaire pour les excursions ciblant le carassin, la brème et les petites carpes.\n",
+    "fish": [
+      "Carassin\n",
+      "Daurade\n",
+      "Carpe\n"
+    ],
+    "catchCount": "13 poissons\n",
+    "center": [
+      49.65,
+      23.97
+    ],
+    "coordinates": [
+      49.65,
+      23.97
+    ]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Lac Briukhovychi\n",
+    "place": "Brioukhovychi, Lviv\n",
+    "distance": "9,3 kilomètres\n",
+    "description": "Un voyage pratique en ville où les plates-formes flottantes et légères fonctionnent de manière cohérente.\n",
+    "fish": [
+      "Carassin\n",
+      "Perche\n",
+      "Daurade\n"
+    ],
+    "catchCount": "11 poissons",
+    "center": [
+      49.91,
+      23.95
+    ],
+    "coordinates": [
+      49.91,
+      23.95
+    ]
+  },
+  {
+    "id": "druzhba",
+    "name": "Base de pêche de Droujba\n",
+    "place": "près d'Horodok\n",
+    "distance": "30,1km\n",
+    "description": "Une base de pêche avec de multiples zones de profondeur et des spots de prédateurs prometteurs.\n",
+    "fish": [
+      "Carpe\n",
+      "Brochet\n",
+      "Poisson-chat\n"
+    ],
+    "catchCount": "19 poissons",
+    "center": [
+      49.8,
+      23.74
+    ],
+    "coordinates": [
+      49.8,
+      23.74
+    ]
+  }
+]

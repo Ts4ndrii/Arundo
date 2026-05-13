@@ -1,0 +1,128 @@
+[
+  {
+    "id": "kurovychi",
+    "name": "Kurovychi Gölü\n",
+    "place": "Kurovychi köyü, Lviv bölgesi\n",
+    "distance": "14,8 kilometre\n",
+    "description": "Sazan, havuz sazanları ve ot sazanlarının yaygın olarak avlandığı sakin geziler için özel bir su kütlesi.\n",
+    "fish": [
+      "Sazan\n",
+      "Havuz sazanı\n",
+      "Ot sazanı\n"
+    ],
+    "catchCount": "18 balık\n",
+    "center": [
+      49.866,
+      24.884
+    ],
+    "coordinates": [
+      49.866,
+      24.884
+    ]
+  },
+  {
+    "id": "prylbychi",
+    "name": "Prylbychi Göleti\n",
+    "place": "Prylbychi köyü, Yavoriv bölgesi\n",
+    "distance": "27,4 km\n",
+    "description": "Ücretli erişime sahip, besleyici ve şamandıra platformlarında sabit ısırıklar sunan spor balıkçılığı suyu.\n",
+    "fish": [
+      "Sazan\n",
+      "Çipura\n",
+      "Havuz sazanı\n"
+    ],
+    "catchCount": "22 balık\n",
+    "center": [
+      49.956,
+      23.574
+    ],
+    "coordinates": [
+      49.956,
+      23.574
+    ]
+  },
+  {
+    "id": "soluky",
+    "name": "Soluky Göleti\n",
+    "place": "Soluky köyü, Lviv bölgesi\n",
+    "distance": "11,1 kilometre\n",
+    "description": "Lviv yakınlarında, iyi kıyıları ve yemlik ve şamandıra balıkçılığı için çeşitli noktaları olan bir su kütlesi.\n",
+    "fish": [
+      "Havuz sazanı\n",
+      "Sazan\n",
+      "Çipura\n"
+    ],
+    "catchCount": "15 balık\n",
+    "center": [
+      49.867,
+      24.051
+    ],
+    "coordinates": [
+      49.867,
+      24.051
+    ]
+  },
+  {
+    "id": "shchyrets",
+    "name": "Shchyrets Rezervuarı\n",
+    "place": "Shchyrets yerleşimi, Lviv bölgesi\n",
+    "distance": "19,6 km\n",
+    "description": "Havuz sazanı, çipura ve küçük sazanı hedef alan geziler için popüler bir su kaynağı.\n",
+    "fish": [
+      "Havuz sazanı\n",
+      "Çipura\n",
+      "Sazan\n"
+    ],
+    "catchCount": "13 balık\n",
+    "center": [
+      49.65,
+      23.97
+    ],
+    "coordinates": [
+      49.65,
+      23.97
+    ]
+  },
+  {
+    "id": "briukhovychi",
+    "name": "Briukhovychi Gölü\n",
+    "place": "Briukhovychi, Lviv\n",
+    "distance": "9,3 kilometre\n",
+    "description": "Şamandıra ve hafif besleyici teçhizatlarının tutarlı bir şekilde çalıştığı şehir içi kullanışlı bir yolculuk.\n",
+    "fish": [
+      "Havuz sazanı\n",
+      "Levrek\n",
+      "Çipura\n"
+    ],
+    "catchCount": "11 balık",
+    "center": [
+      49.91,
+      23.95
+    ],
+    "coordinates": [
+      49.91,
+      23.95
+    ]
+  },
+  {
+    "id": "druzhba",
+    "name": "Druzhba Balıkçılık Üssü\n",
+    "place": "Horodok yakınında\n",
+    "distance": "30,1 kilometre\n",
+    "description": "Birden fazla derinlik bölgesine ve gelecek vaat eden yırtıcı noktalara sahip bir balıkçılık üssü.\n",
+    "fish": [
+      "Sazan\n",
+      "turna balığı\n",
+      "Yayın balığı\n"
+    ],
+    "catchCount": "19 balık",
+    "center": [
+      49.8,
+      23.74
+    ],
+    "coordinates": [
+      49.8,
+      23.74
+    ]
+  }
+]
