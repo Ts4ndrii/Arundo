@@ -825,6 +825,21 @@ app.get('/api/health', (req, res) => {
 // ============================================================
 //  404 fallback
 // ============================================================
+// Кореневий маршрут
+app.get('/', (req, res) => {
+  res.json({
+    message: '🎣 ARUNDO API працює!',
+    endpoints: {
+      health: '/api/health',
+      water: '/api/water',
+      fish: '/api/fish',
+      auth: '/api/auth',
+      stats: '/api/stats'
+    }
+  });
+});
+
+// Обробник 404 для всіх інших маршрутів
 app.use((req, res) => {
   res.status(404).json({ error: `Маршрут ${req.method} ${req.path} не знайдено` });
 });
