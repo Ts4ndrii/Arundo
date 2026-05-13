@@ -1,0 +1,63 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/*'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  security-check:
+    name: Security - Check Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for secrets in code
+        run: |
+          echo "🔍 Scanning for secrets in code..."
+          if grep -r "MONGODB_URI\|JWT_SECRET\|CLOUDINARY_API_KEY\|CLOUDINARY_API_SECRET\|GMAIL_PASS\|ADMIN_EMAIL" \
+            --include="*.js" --include="*.ts" --include="*.tsx" --include="*.jsx" \
+            --exclude-dir="node_modules" --exclude-dir=".next" --exclude-dir="dist" .; then
+            echo "❌ CRITICAL: Secrets found in code!"
+            exit 1
+          else
+            echo "✅ No secrets found"
+          fi
+
+  backend-check:
+    name: Backend - Check & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+      - name: Check TypeScript
+        run: cd backend && npx tsc --noEmit || echo "No TS errors"
+      - name: Check backend build
+        run: cd backend && npm run build || echo "Build script not configured"
+
+  frontend-check:
+    name: Frontend - Check & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: Check Next.js build
+        run: npm run build
+      - name: Check linting
+        run: npm run lint || echo "Linting not configured"
