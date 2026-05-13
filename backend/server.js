@@ -834,12 +834,21 @@ app.use((req, res) => {
 // ============================================================
 async function startServer() {
   await connectDB();
-  app.listen(PORT, () => {
-    console.log('════════════════════════════════════');
-    console.log('  🎣 ARUNDO — сервер запущено');
-    console.log(`  http://localhost:${PORT}`);
-    console.log('════════════════════════════════════');
-  });
+  
+  // Для Vercel serverless deployment
+  if (process.env.VERCEL) {
+    // Vercel environment - export the app
+    module.exports = app;
+  } else {
+    // Local development - start the server
+    app.listen(PORT, () => {
+      console.log('════════════════════════════════════');
+      console.log('  🎣 ARUNDO — сервер запущено');
+      console.log(`  http://localhost:${PORT}`);
+      console.log('════════════════════════════════════');
+    });
+  }
 }
 
+// Start the server (will be called locally, but not on Vercel)
 startServer();
