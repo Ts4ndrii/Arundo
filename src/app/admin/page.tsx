@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 // ─── SVG Icons ────────────────────────────────────────────────
 const FishIcon = () => (
   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -92,6 +94,12 @@ const SunIcon = () => (
   </svg>
 );
 
+// ─── Coord mode buttons — винесено щоб уникнути JSX в масиві ──
+const COORD_MODES = [
+  { id: 'manual', label: 'Вручну',   icon: <PinIcon /> },
+  { id: 'map',    label: 'На карті', icon: <MapIcon /> },
+];
+
 // ─── Toast ────────────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3800); return () => clearTimeout(t); }, [onClose]);
@@ -163,7 +171,7 @@ function MapPicker({ lat, lng, onSelect }) {
     });
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
-  }, [ready]);
+  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!mapRef.current || !window.L || !lat || !lng) return;
@@ -438,6 +446,23 @@ const SEASON_OPTIONS = [
   { value:'winter', label:'❄️ Зима' },
 ];
 
+// ─── Coord mode selector (без JSX в масиві) ───────────────────
+function CoordModeSelector({ coordMode, setCoordMode }) {
+  return (
+    <div style={{ display:'flex', gap:6, marginBottom:10 }}>
+      {COORD_MODES.map(({ id, label, icon }) => (
+        <button
+          key={id}
+          onClick={() => setCoordMode(id)}
+          style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 10px', borderRadius:9, border:'1px solid', borderColor: coordMode === id ? '#2563eb' : '#e2e8f0', background: coordMode === id ? '#eff6ff' : 'white', color: coordMode === id ? '#2563eb' : '#64748b', cursor:'pointer', fontSize:13, fontWeight:500, transition:'all 0.15s', fontFamily:'inherit' }}
+        >
+          {icon}{label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // EDIT WATER FORM
 // ═══════════════════════════════════════════════════════════════
@@ -477,7 +502,7 @@ function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel
       if (removeImages.length) fd.append('removeImages', JSON.stringify(removeImages));
       newFiles.forEach(f => fd.append('images', f));
 
-      const res = await fetch(`http://localhost:5000/api/water/${water._id}`, { method: 'PUT', headers: authH(), body: fd });
+      const res = await fetch(`${API}/api/water/${water._id}`, { method: 'PUT', headers: authH(), body: fd });
       const data = await res.json();
       if (res.ok) { showToast('Водойму оновлено! ✅'); onSaved(); }
       else showToast(data.error || 'Помилка оновлення', 'error');
@@ -515,11 +540,7 @@ function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel
               <Inp as="textarea" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" />
             </Field>
             <Field label="Координати" required>
-              <div style={{ display:'flex', gap:6, marginBottom:10 }}>
-                {[['manual', 'Вручну', <PinIcon />], ['map', 'На карті', <MapIcon />]].map(([m, l, ic]) => (
-                  <button key={m} onClick={() => setCoordMode(m)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 10px', borderRadius:9, border:'1px solid', borderColor: coordMode === m ? '#2563eb' : '#e2e8f0', background: coordMode === m ? '#eff6ff' : 'white', color: coordMode === m ? '#2563eb' : '#64748b', cursor:'pointer', fontSize:13, fontWeight:500, transition:'all 0.15s', fontFamily:'inherit' }}>{ic}{l}</button>
-                ))}
-              </div>
+              <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} />
               {coordMode === 'manual' ? (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                   <Inp value={form.lat} onChange={e => setForm(p => ({ ...p, lat: e.target.value }))} placeholder="Широта 49.12…" />
@@ -650,7 +671,7 @@ function EditFishForm({ fish, authH, onSaved, onCancel, showToast }) {
       if (removeImage) fd.append('removeImage', 'true');
       if (newFile[0]) fd.append('image', newFile[0]);
 
-      const res = await fetch(`http://localhost:5000/api/fish/${fish._id}`, { method: 'PUT', headers: authH(), body: fd });
+      const res = await fetch(`${API}/api/fish/${fish._id}`, { method: 'PUT', headers: authH(), body: fd });
       const data = await res.json();
       if (res.ok) { showToast('Рибу оновлено! ✅'); onSaved(); }
       else showToast(data.error || 'Помилка оновлення', 'error');
@@ -737,15 +758,12 @@ function FiltersTab({ authH, showToast }) {
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState(null);
 
-  // New water type form
   const [wtForm, setWtForm] = useState({ name:'', emoji:'', description:'' });
   const [wtSaving, setWtSaving] = useState(false);
 
-  // New filter fish form
   const [ffForm, setFfForm] = useState({ name:'', emoji:'' });
   const [ffSaving, setFfSaving] = useState(false);
 
-  // Edit states
   const [editingWt, setEditingWt] = useState(null);
   const [editingFf, setEditingFf] = useState(null);
 
@@ -753,22 +771,22 @@ function FiltersTab({ authH, showToast }) {
     setLoading(true);
     try {
       const [wtR, ffR] = await Promise.all([
-        fetch('http://localhost:5000/api/filters/water-types'),
-        fetch('http://localhost:5000/api/filters/fish'),
+        fetch(`${API}/api/filters/water-types`),
+        fetch(`${API}/api/filters/fish`),
       ]);
       if (wtR.ok) setWaterTypes(await wtR.json());
       if (ffR.ok) setFilterFish(await ffR.json());
     } catch { showToast('Помилка завантаження фільтрів', 'error'); }
     finally { setLoading(false); }
-  }, []);
+  }, [showToast]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const addWaterType = async () => {
     if (!wtForm.name.trim()) { showToast("Назва типу обов'язкова", 'error'); return; }
     setWtSaving(true);
     try {
-      const res = await fetch('http://localhost:5000/api/filters/water-types', {
+      const res = await fetch(`${API}/api/filters/water-types`, {
         method:'POST', headers: { ...authH(), 'Content-Type':'application/json' },
         body: JSON.stringify(wtForm),
       });
@@ -782,7 +800,7 @@ function FiltersTab({ authH, showToast }) {
   const saveWaterType = async () => {
     if (!editingWt.name.trim()) { showToast("Назва обов'язкова", 'error'); return; }
     try {
-      const res = await fetch(`http://localhost:5000/api/filters/water-types/${editingWt._id}`, {
+      const res = await fetch(`${API}/api/filters/water-types/${editingWt._id}`, {
         method:'PUT', headers: { ...authH(), 'Content-Type':'application/json' },
         body: JSON.stringify(editingWt),
       });
@@ -796,7 +814,7 @@ function FiltersTab({ authH, showToast }) {
       message: `Видалити тип водойми "${name}"?`,
       onConfirm: async () => {
         setConfirm(null);
-        const res = await fetch(`http://localhost:5000/api/filters/water-types/${id}`, { method:'DELETE', headers: authH() });
+        const res = await fetch(`${API}/api/filters/water-types/${id}`, { method:'DELETE', headers: authH() });
         if (res.ok) { showToast('Видалено'); load(); }
         else showToast('Помилка видалення', 'error');
       }
@@ -807,7 +825,7 @@ function FiltersTab({ authH, showToast }) {
     if (!ffForm.name.trim()) { showToast("Назва риби обов'язкова", 'error'); return; }
     setFfSaving(true);
     try {
-      const res = await fetch('http://localhost:5000/api/filters/fish', {
+      const res = await fetch(`${API}/api/filters/fish`, {
         method:'POST', headers: { ...authH(), 'Content-Type':'application/json' },
         body: JSON.stringify(ffForm),
       });
@@ -821,7 +839,7 @@ function FiltersTab({ authH, showToast }) {
   const saveFilterFish = async () => {
     if (!editingFf.name.trim()) { showToast("Назва обов'язкова", 'error'); return; }
     try {
-      const res = await fetch(`http://localhost:5000/api/filters/fish/${editingFf._id}`, {
+      const res = await fetch(`${API}/api/filters/fish/${editingFf._id}`, {
         method:'PUT', headers: { ...authH(), 'Content-Type':'application/json' },
         body: JSON.stringify(editingFf),
       });
@@ -835,7 +853,7 @@ function FiltersTab({ authH, showToast }) {
       message: `Видалити "${name}" з фільтрів?`,
       onConfirm: async () => {
         setConfirm(null);
-        const res = await fetch(`http://localhost:5000/api/filters/fish/${id}`, { method:'DELETE', headers: authH() });
+        const res = await fetch(`${API}/api/filters/fish/${id}`, { method:'DELETE', headers: authH() });
         if (res.ok) { showToast('Видалено'); load(); }
         else showToast('Помилка видалення', 'error');
       }
@@ -856,7 +874,6 @@ function FiltersTab({ authH, showToast }) {
         <p style={{ color:'#64748b', margin:'4px 0 0', fontSize:13.5 }}>Керуйте типами водойм, рибами для фільтрів і сезонами</p>
       </div>
 
-      {/* Info box */}
       <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:14, padding:'14px 18px', marginBottom:24, display:'flex', gap:12, alignItems:'flex-start' }}>
         <span style={{ fontSize:18 }}>ℹ️</span>
         <div style={{ fontSize:13.5, color:'#1d4ed8', lineHeight:1.6 }}>
@@ -865,13 +882,9 @@ function FiltersTab({ authH, showToast }) {
       </div>
 
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
-
-        {/* ── Water Types ── */}
         <div>
           <Card>
             <CardHead icon={<WaterIcon />} iconBg="#f0fdf4" iconColor="#059669" title="Типи водойм" sub="Ставок, озеро, річка, платна водойма…" />
-            
-            {/* Add/edit form */}
             <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:20 }}>
               {editingWt ? (
                 <>
@@ -950,7 +963,6 @@ function FiltersTab({ authH, showToast }) {
           </Card>
         </div>
 
-        {/* ── Filter Fish ── */}
         <div>
           <Card>
             <CardHead icon={<FishIcon />} iconBg="#eff6ff" iconColor="#2563eb" title="Риби для фільтрів" sub="Короп, Карась, Форель, Щука…" />
@@ -1025,7 +1037,6 @@ function FiltersTab({ authH, showToast }) {
         </div>
       </div>
 
-      {/* Seasons info card */}
       <Card style={{ marginTop:24 }}>
         <CardHead icon={<SunIcon />} iconBg="#fff7ed" iconColor="#ea580c" title="Сезони ловлі" sub="Вбудовані — не потребують налаштування" />
         <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
@@ -1057,8 +1068,6 @@ function FiltersTab({ authH, showToast }) {
 // ═══════════════════════════════════════════════════════════════
 // MAIN ADMIN PANEL
 // ═══════════════════════════════════════════════════════════════
-const API = 'http://localhost:5000';
-
 export default function AdminPanel() {
   const [token, setToken] = useState('');
   const [activeTab, setActiveTab] = useState('water');
@@ -1074,7 +1083,6 @@ export default function AdminPanel() {
   const [editingWater, setEditingWater] = useState(null);
   const [editingFish, setEditingFish] = useState(null);
 
-  // Water add form
   const [wForm, setWF] = useState({ name:'', lat:'', lng:'', description:'', waterType:'' });
   const [wFiles, setWFiles] = useState([]);
   const [fishTags, setFishTags] = useState([]);
@@ -1082,11 +1090,10 @@ export default function AdminPanel() {
   const [bestSeasons, setBestSeasons] = useState([]);
   const [coordMode, setCoordMode] = useState('manual');
 
-  // Fish add form
   const [fForm, setFF] = useState({ name:'', scientificName:'', description:'', maxWeight:'', maxLength:'' });
   const [fFile, setFFile] = useState([]);
 
-  const showToast = (message, type = 'success') => setToast({ message, type });
+  const showToast = useCallback((message, type = 'success') => setToast({ message, type }), []);
   const authH = useCallback(() => ({ Authorization: `Bearer ${token}` }), [token]);
 
   const loadData = useCallback(async (tok) => {
@@ -1107,12 +1114,12 @@ export default function AdminPanel() {
       const ff = ffR.ok ? await ffR.json() : [];
       setFilterConfig({ waterTypes: wt, filterFish: ff });
     } catch { showToast('Помилка завантаження', 'error'); }
-  }, [token]);
+  }, [token, showToast]);
 
   useEffect(() => {
     const t = localStorage.getItem('adminToken');
     if (t) { setToken(t); loadData(t); }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addWater = async () => {
     if (!wForm.name || !wForm.lat || !wForm.lng) { showToast("Назва та координати обов'язкові", 'error'); return; }
@@ -1189,7 +1196,6 @@ export default function AdminPanel() {
 
   const dominantFishOptions = filterConfig.filterFish.map(f => ({ value: f.name, label: `${f.emoji || '🐟'} ${f.name}` }));
 
-  // ── Edit water ──
   if (editingWater) {
     return (
       <>
@@ -1206,7 +1212,6 @@ export default function AdminPanel() {
     );
   }
 
-  // ── Edit fish ──
   if (editingFish) {
     return (
       <>
@@ -1228,7 +1233,6 @@ export default function AdminPanel() {
       <style>{CSS_GLOBAL}</style>
       <div style={{ minHeight:'100vh', background:'#f8fafc', fontFamily:"'Segoe UI', system-ui, sans-serif", color:'#1e293b' }}>
 
-        {/* Tab bar */}
         <div style={{ background:'white', borderBottom:'1px solid #e2e8f0', padding:'0 32px', display:'flex', alignItems:'center', gap:2, boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, padding:'15px 0', marginRight:20 }}>
             <span style={{ fontSize:18 }}>🎣</span>
@@ -1248,7 +1252,6 @@ export default function AdminPanel() {
 
         <div style={{ maxWidth:1340, margin:'0 auto', padding:'32px 32px 72px', animation:'fadeUp 0.28s ease' }}>
 
-          {/* ═══ WATER TAB ═══ */}
           {activeTab === 'water' && (
             <div>
               <div style={{ marginBottom:26 }}>
@@ -1256,7 +1259,6 @@ export default function AdminPanel() {
                 <p style={{ color:'#64748b', margin:'4px 0 0', fontSize:13.5 }}>Додавайте та керуйте рибальськими водоймами</p>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'460px 1fr', gap:22 }}>
-                {/* Add form */}
                 <Card>
                   <CardHead icon={<PlusIcon />} iconBg="#eff6ff" iconColor="#2563eb" title="Нова водойма" sub="Заповніть і збережіть" />
                   <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
@@ -1272,11 +1274,7 @@ export default function AdminPanel() {
                       <Inp as="textarea" value={wForm.description} onChange={e => setWF(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" />
                     </Field>
                     <Field label="Координати" required>
-                      <div style={{ display:'flex', gap:6, marginBottom:10 }}>
-                        {[['manual', 'Вручну', <PinIcon />], ['map', 'На карті', <MapIcon />]].map(([m, l, ic]) => (
-                          <button key={m} onClick={() => setCoordMode(m)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 10px', borderRadius:9, border:'1px solid', borderColor: coordMode === m ? '#2563eb' : '#e2e8f0', background: coordMode === m ? '#eff6ff' : 'white', color: coordMode === m ? '#2563eb' : '#64748b', cursor:'pointer', fontSize:13, fontWeight:500, transition:'all 0.15s', fontFamily:'inherit' }}>{ic}{l}</button>
-                        ))}
-                      </div>
+                      <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} />
                       {coordMode === 'manual' ? (
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                           <Inp value={wForm.lat} onChange={e => setWF(p => ({ ...p, lat: e.target.value }))} placeholder="Широта 49.12…" />
@@ -1303,11 +1301,10 @@ export default function AdminPanel() {
                   </div>
                 </Card>
 
-                {/* List */}
                 <div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14 }}>
                     <div style={{ fontWeight:700, fontSize:15, color:'#1e293b' }}>Усі водойми</div>
-                    <div style={{ fontSize:13, color:'#94a3b8' }}>{waterBodies.length} об'єктів</div>
+                    <div style={{ fontSize:13, color:'#94a3b8' }}>{waterBodies.length} об&apos;єктів</div>
                   </div>
                   <Card style={{ padding:14 }}>
                     {waterBodies.length === 0 ? (
@@ -1345,7 +1342,6 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* ═══ FISH TAB ═══ */}
           {activeTab === 'fish' && (
             <div>
               <div style={{ marginBottom:26 }}>
@@ -1400,12 +1396,10 @@ export default function AdminPanel() {
             </div>
           )}
 
-          {/* ═══ FILTERS TAB ═══ */}
           {activeTab === 'filters' && (
             <FiltersTab authH={authH} showToast={showToast} />
           )}
 
-          {/* ═══ STATS TAB ═══ */}
           {activeTab === 'stats' && (
             <div>
               <div style={{ marginBottom:26 }}>
@@ -1482,7 +1476,6 @@ export default function AdminPanel() {
   );
 }
 
-// ── NavBar helper ──────────────────────────────────────────────
 function NavBar({ breadcrumb }) {
   return (
     <div style={{ background:'white', borderBottom:'1px solid #e2e8f0', padding:'0 32px', display:'flex', alignItems:'center', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
@@ -1496,7 +1489,6 @@ function NavBar({ breadcrumb }) {
   );
 }
 
-// ── Global CSS ─────────────────────────────────────────────────
 const CSS_GLOBAL = `
   * { box-sizing: border-box; }
   @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
