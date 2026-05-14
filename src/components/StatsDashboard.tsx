@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   Fish, Plus, X, CalendarDays, Scale, MapPin, Camera,
   ChevronDown, ChevronUp, Trash2, Edit3, Loader2,
@@ -74,11 +74,8 @@ function AuthGate() {
 
   return (
     <div className="rounded-[2rem] border border-slate-200 bg-white overflow-hidden shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      {/* Decorative top bar */}
       <div className="h-2 bg-gradient-to-r from-blue-500 via-blue-400 to-emerald-400" />
-
       <div className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
-        {/* Icon */}
         <div className="relative mb-6">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-600/10 dark:bg-blue-500/10">
             <Fish className="h-10 w-10 text-blue-600 dark:text-blue-400" />
@@ -87,15 +84,12 @@ function AuthGate() {
             <Trophy className="h-4 w-4 text-white" />
           </div>
         </div>
-
         <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 sm:text-3xl">
           Ведіть щоденник уловів
         </h2>
         <p className="mt-3 max-w-sm text-base leading-7 text-slate-600 dark:text-slate-300">
           Зареєструйтесь або увійдіть, щоб записувати улови, додавати фото та переглядати особисту статистику.
         </p>
-
-        {/* Feature list */}
         <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3 text-sm">
           {[
             { icon: "📍", text: "Прив'язка до водойми" },
@@ -111,8 +105,6 @@ function AuthGate() {
             </div>
           ))}
         </div>
-
-        {/* CTA buttons */}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
@@ -146,15 +138,11 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
     if (mapInstanceRef.current) return;
 
     const loadLeaflet = () => {
-      if ((window as any).L) {
-        initMap();
-        return;
-      }
+      if ((window as any).L) { initMap(); return; }
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
       document.head.appendChild(link);
-
       const script = document.createElement("script");
       script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
       script.onload = initMap;
@@ -165,25 +153,16 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
       const L = (window as any).L;
       if (!mapRef.current || mapInstanceRef.current) return;
       const map = L.map(mapRef.current, {
-        center: [lat, lng],
-        zoom: 13,
-        zoomControl: true,
-        // ── Інтерактивна карта ──
-        scrollWheelZoom: true,
-        dragging: true,
-        doubleClickZoom: true,
-        attributionControl: false,
+        center: [lat, lng], zoom: 13, zoomControl: true,
+        scrollWheelZoom: true, dragging: true, doubleClickZoom: true, attributionControl: false,
       });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-      // Одна мітка — тільки вибрана водойма
       const icon = L.divIcon({
         className: "",
         html: `<div style="width:28px;height:28px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
         </div>`,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        iconSize: [28, 28], iconAnchor: [14, 14],
       });
       L.marker([lat, lng], { icon }).addTo(map).bindPopup(name).openPopup();
       mapInstanceRef.current = map;
@@ -191,40 +170,22 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
 
     loadLeaflet();
     return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
+      if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
     };
   }, [lat, lng, name]);
 
   return (
-    <div
-      ref={mapRef}
-      className="h-44 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
-    />
+    <div ref={mapRef} className="h-44 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800" />
   );
 }
 
 // ─── Photo Grid ───────────────────────────────────────────────
-function PhotoGrid({
-  photos,
-  onRemove,
-}: {
-  photos: CatchPhoto[];
-  onRemove?: (publicId: string) => void;
-}) {
+function PhotoGrid({ photos, onRemove }: { photos: CatchPhoto[]; onRemove?: (publicId: string) => void }) {
   const [lightbox, setLightbox] = useState<string | null>(null);
-
   if (photos.length === 0) return null;
-
   return (
     <>
-      <div
-        className={`grid gap-2 ${
-          photos.length === 1 ? "grid-cols-1" : photos.length === 2 ? "grid-cols-2" : "grid-cols-3"
-        }`}
-      >
+      <div className={`grid gap-2 ${photos.length === 1 ? "grid-cols-1" : photos.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
         {photos.map((photo) => (
           <div
             key={photo.publicId}
@@ -232,10 +193,7 @@ function PhotoGrid({
             style={{ aspectRatio: "4/3" }}
             onClick={() => setLightbox(photo.url)}
           >
-            <div
-              className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
-              style={{ backgroundImage: `url(${photo.url})` }}
-            />
+            <div className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60" style={{ backgroundImage: `url(${photo.url})` }} />
             <img src={photo.url} alt="Фото улову" className="relative z-10 w-full h-full object-contain" />
             {onRemove && (
               <button
@@ -249,23 +207,13 @@ function PhotoGrid({
           </div>
         ))}
       </div>
-
       {lightbox && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm"
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-            onClick={() => setLightbox(null)}
-          >
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm" onClick={() => setLightbox(null)}>
+          <button className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition" onClick={() => setLightbox(null)}>
             <X className="h-5 w-5" />
           </button>
           <div className="relative max-h-[90vh] max-w-[95vw]" onClick={(e) => e.stopPropagation()}>
-            <div
-              className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-30"
-              style={{ backgroundImage: `url(${lightbox})` }}
-            />
+            <div className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-30" style={{ backgroundImage: `url(${lightbox})` }} />
             <img src={lightbox} alt="" className="relative z-10 max-h-[90vh] max-w-[95vw] object-contain rounded-xl shadow-2xl" />
           </div>
         </div>
@@ -275,14 +223,8 @@ function PhotoGrid({
 }
 
 // ─── Waterbody Selector ───────────────────────────────────────
-function WaterbodySelector({
-  value,
-  displayName,
-  onChange,
-}: {
-  value: string;
-  displayName: string;
-  onChange: (id: string, name: string) => void;
+function WaterbodySelector({ value, displayName, onChange }: {
+  value: string; displayName: string; onChange: (id: string, name: string) => void;
 }) {
   const [query, setQuery] = useState(displayName);
   const [open, setOpen] = useState(false);
@@ -331,7 +273,6 @@ function WaterbodySelector({
           <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         )}
       </div>
-
       {open && !value && (
         <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-60 overflow-auto rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
           {loading ? (
@@ -362,16 +303,16 @@ function WaterbodySelector({
 }
 
 // ─── Add / Edit Dialog ────────────────────────────────────────
-function CatchDialog({
-  open,
-  initial,
-  onClose,
-  onSaved,
-}: {
-  open: boolean;
-  initial?: CatchRecord;
-  onClose: () => void;
-  onSaved: () => void;
+function emptyDraft(): FormDraft {
+  return {
+    waterbodyId: "", waterbodyName: "", date: todayISO(),
+    species: "", fishCount: "1", biggestFishName: "",
+    biggestFishWeight: "", notes: "", photos: [],
+  };
+}
+
+function CatchDialog({ open, initial, onClose, onSaved }: {
+  open: boolean; initial?: CatchRecord; onClose: () => void; onSaved: () => Promise<void>;
 }) {
   const isEdit = !!initial;
   const [draft, setDraft] = useState<FormDraft>(emptyDraft);
@@ -381,14 +322,6 @@ function CatchDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
-
-  function emptyDraft(): FormDraft {
-    return {
-      waterbodyId: "", waterbodyName: "", date: todayISO(),
-      species: "", fishCount: "1", biggestFishName: "",
-      biggestFishWeight: "", notes: "", photos: [],
-    };
-  }
 
   useEffect(() => {
     if (!open) return;
@@ -427,6 +360,7 @@ function CatchDialog({
     setSaving(true); setError("");
     try {
       const fd = new FormData();
+      // ── ВИПРАВЛЕННЯ: завжди передаємо waterbodyId (потрібно для оновлення coords) ──
       fd.append("waterbodyId", draft.waterbodyId);
       fd.append("date", draft.date);
       fd.append("species", draft.species.trim());
@@ -448,7 +382,9 @@ function CatchDialog({
         const data = await res.json();
         throw new Error(data.error ?? "Помилка збереження");
       }
-      onSaved(); onClose();
+      // ── ВИПРАВЛЕННЯ: чекаємо на повне оновлення даних перед закриттям ──
+      await onSaved();
+      onClose();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -461,13 +397,12 @@ function CatchDialog({
   const existingPhotos = (initial?.photos ?? []).filter((p) => !removeIds.includes(p.publicId));
 
   return (
-    // ── Фікс: items-start + pt-safe щоб не залазило під хедер ──
     <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/60 px-4 pt-10 pb-4 backdrop-blur-sm sm:items-center sm:pt-4">
       <button type="button" aria-label="Закрити" className="absolute inset-0 cursor-default" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 flex flex-col"
+      <div
+        className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 flex flex-col"
         style={{ maxHeight: "calc(100vh - 13rem)" }}
       >
-        {/* Header — компактний */}
         <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/70 shrink-0 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
@@ -478,17 +413,14 @@ function CatchDialog({
             </h2>
           </div>
           <button
-            type="button"
-            onClick={onClose}
+            type="button" onClick={onClose}
             className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-5 py-4 sm:px-7 space-y-4">
-          {/* Водойма */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Водойма *</label>
             <WaterbodySelector
@@ -555,7 +487,6 @@ function CatchDialog({
             />
           </div>
 
-          {/* Фото */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Фото улову</label>
             {existingPhotos.length > 0 && (
@@ -754,7 +685,8 @@ export default function CatchesPage() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [tab, setTab] = useState<"list" | "stats">("list");
 
-  const fetchCatches = useCallback(async () => {
+  // ── ВИПРАВЛЕННЯ: fetchCatches повертає Promise щоб можна було await ──
+  const fetchCatches = useCallback(async (): Promise<void> => {
     if (!getToken()) { setLoading(false); return; }
     setLoading(true);
     try {
@@ -763,7 +695,8 @@ export default function CatchesPage() {
       });
       if (!res.ok) throw new Error("error");
       const data = await res.json();
-      setCatches(Array.isArray(data) ? data : []);
+      // ── ВИПРАВЛЕННЯ: примусово оновлюємо стан свіжими даними з сервера ──
+      setCatches(Array.isArray(data) ? [...data] : []);
     } catch {
       setCatches([]);
     } finally {
@@ -779,17 +712,26 @@ export default function CatchesPage() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
       });
-      fetchCatches();
+      await fetchCatches();
     } catch {}
   }
 
-  const totalFish = catches.reduce((s, c) => s + c.fishCount, 0);
-  const biggestCatch = catches
-    .filter((c) => c.biggestFishWeight > 0 && c.biggestFishName)
-    .sort((a, b) => b.biggestFishWeight - a.biggestFishWeight)[0];
-  const speciesMap = new Map<string, number>();
-  catches.forEach((c) => speciesMap.set(c.species, (speciesMap.get(c.species) ?? 0) + c.fishCount));
-  const topSpecies = Array.from(speciesMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  // ── ВИПРАВЛЕННЯ: useMemo гарантує перерахунок статистики при кожній зміні catches ──
+  const stats = useMemo(() => {
+    const totalFish = catches.reduce((s, c) => s + c.fishCount, 0);
+
+    const biggestCatch = catches
+      .filter((c) => c.biggestFishWeight > 0 && c.biggestFishName)
+      .sort((a, b) => b.biggestFishWeight - a.biggestFishWeight)[0] ?? null;
+
+    const speciesMap = new Map<string, number>();
+    catches.forEach((c) => speciesMap.set(c.species, (speciesMap.get(c.species) ?? 0) + c.fishCount));
+    const topSpecies = Array.from(speciesMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+    return { totalFish, biggestCatch, topSpecies };
+  }, [catches]);
+
+  const { totalFish, biggestCatch, topSpecies } = stats;
 
   return (
     <>
@@ -797,6 +739,7 @@ export default function CatchesPage() {
         open={dialogOpen}
         initial={editTarget}
         onClose={() => { setDialogOpen(false); setEditTarget(undefined); }}
+        // ── ВИПРАВЛЕННЯ: передаємо fetchCatches як onSaved (повертає Promise) ──
         onSaved={fetchCatches}
       />
       <ConfirmDialog
@@ -808,7 +751,6 @@ export default function CatchesPage() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 transition-colors duration-200 dark:bg-slate-950 min-h-screen">
-        {/* Page header */}
         <section className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-blue-600 dark:text-blue-300">
             Мій щоденник
@@ -821,14 +763,12 @@ export default function CatchesPage() {
           </p>
         </section>
 
-        {/* ── Незареєстрований ── */}
         {!user ? (
           <div className="mt-8">
             <AuthGate />
           </div>
         ) : (
           <>
-            {/* Tabs + Add button */}
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 w-fit dark:border-slate-800 dark:bg-slate-900">
                 {(["list", "stats"] as const).map((t) => (
