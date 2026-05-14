@@ -1,537 +1,684 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import Link from "next/link";
-import { ArrowRight, BarChart3, CalendarDays, Fish, MapPinned, Plus, Scale } from "lucide-react";
-import { useAppUI, type CatchInput, type CatchRecord } from "@/components/AppShell";
-import fishCardsData from "@/data/wiki/fish-cards.json";
-import waterCardsData from "@/data/wiki/water-cards.json";
-import { getUiCopy, type LanguageCode } from "@/lib/ui-copy";
-import DatePicker from "@/components/DatePicker";
+import { useEffect, useRef, useState, useCallback } from "react";
+import {
+  Fish, Plus, X, CalendarDays, Scale, MapPin, Camera,
+  ChevronDown, ChevronUp, Trash2, Edit3, Check, Loader2,
+  BarChart3, Trophy, Waves, ArrowLeft
+} from "lucide-react";
 
-type StatsFormDraft = {
+// ─── Types ────────────────────────────────────────────────────
+type Waterbody = {
+  _id: string;
+  name: string;
+  location: { coordinates: [number, number] };
+  waterType?: string;
+};
+
+type CatchPhoto = { url: string; publicId: string };
+
+type CatchRecord = {
+  _id: string;
+  userId: string;
+  userName: string;
+  waterbodyId: string;
+  waterbodyName: string;
+  waterbodyCoords: { lat: number; lng: number } | null;
   date: string;
-  place: string;
+  species: string;
+  fishCount: number;
+  biggestFishName: string;
+  biggestFishWeight: number;
+  notes: string;
+  photos: CatchPhoto[];
+  createdAt: string;
+};
+
+type FormDraft = {
+  waterbodyId: string;
+  waterbodyName: string;
+  date: string;
   species: string;
   fishCount: string;
   biggestFishName: string;
   biggestFishWeight: string;
+  notes: string;
+  photos: File[];
 };
 
-type NamedCard = {
-  name: string;
-};
+// ─── Config ──────────────────────────────────────────────────
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
- 
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("arundo_token");
+}
 
-const speciesAccentClasses = [
-  "text-amber-600",
-  "text-blue-600",
-  "text-emerald-600",
-  "text-sky-600",
-  "text-rose-600",
-  "text-violet-600",
-];
-
-function todayForInput() {
+function todayISO() {
   const now = new Date();
-  const offsetMinutes = now.getTimezoneOffset();
-  const localDate = new Date(now.getTime() - offsetMinutes * 60_000);
-  return localDate.toISOString().slice(0, 10);
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
 }
 
-function formatDateLabel(dateString: string) {
-  const [year, month, day] = dateString.split("-");
-
-  if (!year || !month || !day) {
-    return dateString;
-  }
-
-  return `${day}.${month}.${year}`;
+function formatDate(d: string) {
+  const [y, m, day] = d.split("-");
+  if (!y || !m || !day) return d;
+  return `${day}.${m}.${y}`;
 }
 
-function formatFishCount(language: LanguageCode, fishCount: number) {
-  const ui = getUiCopy(language).stats;
-  return `${fishCount} ${ui.fishLabel}`;
-}
+// ─── Mini Static Map (via Leaflet CDN in iframe) ──────────────
+function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
 
-function capitalizeFirstLetter(value: string) {
-  const trimmedValue = value.replace(/^\s+/, "");
+  useEffect(() => {
+    if (typeof window === "undefined" || !mapRef.current) return;
+    if (mapInstanceRef.current) return;
 
-  if (!trimmedValue) {
-    return "";
-  }
-
-  return `${trimmedValue.charAt(0).toUpperCase()}${trimmedValue.slice(1)}`;
-}
-
-function buildLocalizedNameResolver(cardsByLanguage: Record<string, NamedCard[]>, language: LanguageCode) {
-  const currentCards = cardsByLanguage[language] ?? cardsByLanguage.en ?? [];
-  const lookup = new Map<string, string>();
-
-  for (const sourceCards of Object.values(cardsByLanguage)) {
-    sourceCards.forEach((card, index) => {
-      const localizedName = currentCards[index]?.name;
-
-      if (!localizedName) {
+    // Dynamically load Leaflet
+    const loadLeaflet = async () => {
+      if ((window as any).L) {
+        initMap();
         return;
       }
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      document.head.appendChild(link);
 
-      lookup.set(card.name.trim().toLowerCase(), localizedName);
-    });
-  }
+      const script = document.createElement("script");
+      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+      script.onload = initMap;
+      document.head.appendChild(script);
+    };
 
-  return (value: string) => lookup.get(value.trim().toLowerCase()) ?? value;
-}
-
-type TripGroup = {
-  id: string;
-  place: string;
-  latestDate: string;
-  totalFishCount: number;
-  entries: CatchRecord[];
-  speciesSummary: Array<{ species: string; count: number }>;
-};
-
-function groupCatchesByPlace(catches: CatchRecord[]): TripGroup[] {
-  const grouped = new Map<string, CatchRecord[]>();
-
-  for (const catchRecord of catches) {
-    const key = catchRecord.place.trim().toLowerCase();
-    const records = grouped.get(key) ?? [];
-    records.push(catchRecord);
-    grouped.set(key, records);
-  }
-
-  return Array.from(grouped.entries())
-    .map(([placeKey, entries]) => {
-      const sortedEntries = [...entries].sort((leftCatch, rightCatch) => {
-        const leftDate = new Date(leftCatch.date).getTime();
-        const rightDate = new Date(rightCatch.date).getTime();
-
-        if (Number.isNaN(leftDate) || Number.isNaN(rightDate)) {
-          return 0;
-        }
-
-        return rightDate - leftDate;
+    const initMap = () => {
+      const L = (window as any).L;
+      if (!mapRef.current || mapInstanceRef.current) return;
+      const map = L.map(mapRef.current, {
+        center: [lat, lng],
+        zoom: 13,
+        zoomControl: false,
+        scrollWheelZoom: false,
+        dragging: false,
+        doubleClickZoom: false,
+        attributionControl: false,
       });
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+      const icon = L.divIcon({
+        className: "",
+        html: `<div style="width:28px;height:28px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+        </div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      });
+      L.marker([lat, lng], { icon }).addTo(map).bindPopup(name);
+      mapInstanceRef.current = map;
+    };
 
-      const speciesMap = new Map<string, number>();
-
-      for (const catchRecord of sortedEntries) {
-        speciesMap.set(catchRecord.species, (speciesMap.get(catchRecord.species) ?? 0) + catchRecord.fishCount);
+    loadLeaflet();
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
       }
+    };
+  }, [lat, lng, name]);
 
-      return {
-        id: placeKey,
-        place: sortedEntries[0]?.place ?? placeKey,
-        latestDate: sortedEntries[0]?.date ?? "",
-        totalFishCount: sortedEntries.reduce((sum, catchRecord) => sum + catchRecord.fishCount, 0),
-        entries: sortedEntries,
-        speciesSummary: Array.from(speciesMap.entries())
-          .sort((leftEntry, rightEntry) => rightEntry[1] - leftEntry[1])
-          .map(([species, count]) => ({ species, count }))
-          .slice(0, 3),
-      };
-    })
-    .sort((leftGroup, rightGroup) => {
-      const leftDate = new Date(leftGroup.latestDate).getTime();
-      const rightDate = new Date(rightGroup.latestDate).getTime();
-
-      if (Number.isNaN(leftDate) || Number.isNaN(rightDate)) {
-        return 0;
-      }
-
-      return rightDate - leftDate;
-    });
-}
-
-function emptyDraft(): StatsFormDraft {
-  return {
-    date: todayForInput(),
-    place: "",
-    species: "",
-    fishCount: "1",
-    biggestFishName: "",
-    biggestFishWeight: "",
-  };
-}
-
-function sortByDateDescending(catches: CatchRecord[]) {
-  return [...catches].sort((leftCatch, rightCatch) => {
-    const leftDate = new Date(leftCatch.date).getTime();
-    const rightDate = new Date(rightCatch.date).getTime();
-
-    if (Number.isNaN(leftDate) || Number.isNaN(rightDate)) {
-      return 0;
-    }
-
-    return rightDate - leftDate;
-  });
-}
-
-function TripPreview({ fishCount, mapHref, ariaLabel }: { fishCount: string; mapHref?: string; ariaLabel: string }) {
   return (
-    <div className="relative h-36 overflow-hidden rounded-[1.5rem] bg-[linear-gradient(135deg,#d8f4d6_0%,#bff0e4_28%,#dff6c5_58%,#b5e2f7_100%)]">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.8)_0,transparent_18%),radial-gradient(circle_at_70%_35%,rgba(255,255,255,0.55)_0,transparent_16%),radial-gradient(circle_at_52%_74%,rgba(56,189,248,0.34)_0,transparent_24%)]" />
-      <div className="absolute left-5 top-5 flex h-11 w-11 items-center justify-center rounded-full border-4 border-white bg-blue-600/85 text-white shadow-lg">
-        <MapPinned className="h-5 w-5" />
+    <div
+      ref={mapRef}
+      className="h-36 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
+    />
+  );
+}
+
+// ─── Photo Grid ───────────────────────────────────────────────
+function PhotoGrid({
+  photos,
+  onRemove,
+}: {
+  photos: CatchPhoto[];
+  onRemove?: (publicId: string) => void;
+}) {
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  if (photos.length === 0) return null;
+
+  return (
+    <>
+      <div
+        className={`grid gap-2 ${
+          photos.length === 1
+            ? "grid-cols-1"
+            : photos.length === 2
+            ? "grid-cols-2"
+            : "grid-cols-3"
+        }`}
+      >
+        {photos.map((photo) => (
+          <div
+            key={photo.publicId}
+            className="relative group cursor-pointer overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800"
+            style={{ aspectRatio: "4/3" }}
+            onClick={() => setLightbox(photo.url)}
+          >
+            {/* Blurred background fill */}
+            <div
+              className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
+              style={{ backgroundImage: `url(${photo.url})` }}
+            />
+            {/* Sharp image — object-contain so nothing is cropped */}
+            <img
+              src={photo.url}
+              alt="Фото улову"
+              className="relative z-10 w-full h-full object-contain"
+            />
+            {onRemove && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(photo.publicId);
+                }}
+                className="absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition shadow-lg"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        ))}
       </div>
-      <div className="absolute right-4 top-4 rounded-full bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-md">
-        {fishCount}
-      </div>
-      {mapHref ? (
-        <Link
-          href={mapHref}
-          aria-label={ariaLabel}
-          className="absolute right-4 bottom-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg transition hover:scale-105 hover:bg-white"
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={() => setLightbox(null)}
         >
-          <ArrowRight className="h-5 w-5" />
-        </Link>
-      ) : (
-        <div className="absolute right-4 bottom-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg">
-          <ArrowRight className="h-5 w-5" />
+          <button
+            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+            onClick={() => setLightbox(null)}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div
+            className="relative max-h-[90vh] max-w-[95vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-30"
+              style={{ backgroundImage: `url(${lightbox})` }}
+            />
+            <img
+              src={lightbox}
+              alt=""
+              className="relative z-10 max-h-[90vh] max-w-[95vw] object-contain rounded-xl shadow-2xl"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── Waterbody Selector ───────────────────────────────────────
+function WaterbodySelector({
+  value,
+  displayName,
+  onChange,
+}: {
+  value: string;
+  displayName: string;
+  onChange: (id: string, name: string) => void;
+}) {
+  const [query, setQuery] = useState(displayName);
+  const [open, setOpen] = useState(false);
+  const [bodies, setBodies] = useState<Waterbody[]>([]);
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { setQuery(displayName); }, [displayName]);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    fetch(`${API_BASE}/api/water`)
+      .then((r) => r.json())
+      .then((data: Waterbody[]) => setBodies(Array.isArray(data) ? data : []))
+      .catch(() => setBodies([]))
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  const filtered = bodies.filter((b) =>
+    b.name.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Waves className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          readOnly={!!value}
+          onClick={() => { if (!value) setOpen(true); }}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => { if (!value) setOpen(true); }}
+          placeholder="Оберіть водойму зі списку…"
+          className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
+        />
+        {value ? (
+          <button
+            type="button"
+            onClick={() => { onChange("", ""); setQuery(""); setOpen(false); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:text-red-500 transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : (
+          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        )}
+      </div>
+
+      {open && !value && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-60 overflow-auto rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900">
+          {loading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="px-4 py-4 text-sm text-slate-500">Водойм не знайдено</p>
+          ) : (
+            filtered.map((b) => (
+              <button
+                key={b._id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChange(b._id, b.name);
+                  setQuery(b.name);
+                  setOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+              >
+                <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{b.name}</span>
+                {b.waterType && (
+                  <span className="ml-auto text-xs text-slate-400">{b.waterType}</span>
+                )}
+              </button>
+            ))
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function EntrySummary({
-  entry,
-  language,
-  resolveSpeciesName,
-}: {
-  entry: CatchRecord;
-  language: LanguageCode;
-  resolveSpeciesName: (value: string) => string;
-}) {
-  const ui = getUiCopy(language).stats;
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{formatDateLabel(entry.date)}</p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            {resolveSpeciesName(entry.species)} · {formatFishCount(language, entry.fishCount)}
-          </p>
-        </div>
-        <div className="text-sm text-slate-500 dark:text-slate-400">
-          {entry.biggestFishName.trim() ? (
-            <span>
-              {ui.trophyLabel}: {entry.biggestFishName}
-            </span>
-          ) : (
-            <span>{ui.noTrophyLabel}</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type ConfirmAction =
-  | { type: "clear" }
-  | { type: "delete"; id: string }
-  | null;
-
-function ConfirmDialog({
+// ─── Add / Edit Dialog ────────────────────────────────────────
+function CatchDialog({
   open,
-  language,
-  title,
-  description,
-  confirmLabel,
+  initial,
   onClose,
-  onConfirm,
+  onSaved,
 }: {
   open: boolean;
-  language: LanguageCode;
-  title: string;
-  description: string;
-  confirmLabel: string;
+  initial?: CatchRecord;
   onClose: () => void;
-  onConfirm: () => void;
+  onSaved: () => void;
 }) {
-  const ui = getUiCopy(language).stats;
+  const isEdit = !!initial;
+  const [draft, setDraft] = useState<FormDraft>(emptyDraft);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [removeIds, setRemoveIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  if (!open) {
-    return null;
+  function emptyDraft(): FormDraft {
+    return {
+      waterbodyId: "",
+      waterbodyName: "",
+      date: todayISO(),
+      species: "",
+      fishCount: "1",
+      biggestFishName: "",
+      biggestFishWeight: "",
+      notes: "",
+      photos: [],
+    };
   }
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/65 px-4 backdrop-blur-md">
-      <button type="button" aria-label={ui.cancel} className="absolute inset-0 cursor-default" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900">
-        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/70">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-red-600 dark:text-red-300">
-            {ui.confirmHeading}
-          </p>
-          <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{title}</h3>
-        </div>
-        <div className="px-6 py-5">
-          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              {ui.cancel}
-            </button>
-            <button
-              type="button"
-              onClick={onConfirm}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-700"
-            >
-              {confirmLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AddCatchDialog({
-  open,
-  language,
-  onClose,
-  onSubmit,
-}: {
-  open: boolean;
-  language: LanguageCode;
-  onClose: () => void;
-  onSubmit: (catchInput: CatchInput) => void;
-}) {
-  const ui = getUiCopy(language).stats;
-  const [draft, setDraft] = useState<StatsFormDraft>(() => emptyDraft());
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [placeOpen, setPlaceOpen] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (initial) {
+      setDraft({
+        waterbodyId: initial.waterbodyId,
+        waterbodyName: initial.waterbodyName,
+        date: initial.date,
+        species: initial.species,
+        fishCount: String(initial.fishCount),
+        biggestFishName: initial.biggestFishName,
+        biggestFishWeight: initial.biggestFishWeight ? String(initial.biggestFishWeight) : "",
+        notes: initial.notes,
+        photos: [],
+      });
+    } else {
       setDraft(emptyDraft());
     }
-  }, [open]);
+    setPhotoFiles([]);
+    setPhotoPreviews([]);
+    setRemoveIds([]);
+    setError("");
+  }, [open, initial]);
 
-  if (!open) {
-    return null;
+  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    setPhotoFiles((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  function removePreview(index: number) {
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
+  }
 
-    const fishCount = Number(draft.fishCount);
-    const biggestFishWeight = Number(draft.biggestFishWeight);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!draft.waterbodyId) { setError("Оберіть водойму зі списку"); return; }
+    if (!draft.date) { setError("Вкажіть дату"); return; }
+    if (!draft.species.trim()) { setError("Вкажіть вид риби"); return; }
+    if (parseInt(draft.fishCount) < 1) { setError("Кількість риб має бути ≥ 1"); return; }
 
-    const newErrors: Record<string, string> = {};
+    setSaving(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("waterbodyId", draft.waterbodyId);
+      fd.append("date", draft.date);
+      fd.append("species", draft.species.trim());
+      fd.append("fishCount", draft.fishCount);
+      fd.append("biggestFishName", draft.biggestFishName.trim());
+      fd.append("biggestFishWeight", draft.biggestFishWeight || "0");
+      fd.append("notes", draft.notes.trim());
+      if (removeIds.length > 0) fd.append("removePhotos", JSON.stringify(removeIds));
+      photoFiles.forEach((f) => fd.append("photos", f));
 
-    if (!draft.date) newErrors.date = ui.requiredField;
-    if (!draft.place.trim()) newErrors.place = ui.requiredField;
-    if (!draft.species.trim()) newErrors.species = ui.requiredField;
-    if (!Number.isFinite(fishCount) || fishCount <= 0) newErrors.fishCount = ui.invalidNumber;
+      const url = isEdit
+        ? `${API_BASE}/api/catches/${initial!._id}`
+        : `${API_BASE}/api/catches`;
+      const method = isEdit ? "PUT" : "POST";
 
-    // biggest fish is optional: validate weight only when a name is provided
-    const providedBiggestName = String(draft.biggestFishName).trim();
-    const providedBiggestWeight = Number(draft.biggestFishWeight);
-    if (providedBiggestName && (!Number.isFinite(providedBiggestWeight) || providedBiggestWeight <= 0)) {
-      newErrors.biggestFishWeight = ui.invalidNumber;
-    }
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      return;
-    }
-
-    onSubmit({
-      date: draft.date,
-      place: draft.place.trim(),
-      species: capitalizeFirstLetter(draft.species.trim()),
-      fishCount: Math.max(1, Math.round(fishCount)),
-      biggestFishName: providedBiggestName,
-      biggestFishWeight: Number.isFinite(providedBiggestWeight) && providedBiggestWeight > 0 ? providedBiggestWeight : 0,
-    });
-    onClose();
-  };
-
-  function validateField(name: keyof StatsFormDraft) {
-    const value = (draft as any)[name];
-    if (name === "fishCount" || name === "biggestFishWeight") {
-      const num = Number(value);
-      if (name === "fishCount") {
-        if (!Number.isFinite(num) || num <= 0) {
-          setErrors((e) => ({ ...e, [name]: ui.invalidNumber }));
-          return false;
-        }
-      } else {
-        // biggestFishWeight is optional: clear error if empty or valid
-        if (!String(value).trim()) {
-          setErrors((e) => {
-            const copy = { ...e };
-            delete copy[name];
-            return copy;
-          });
-          return true;
-        }
-
-        if (!Number.isFinite(num) || num <= 0) {
-          setErrors((e) => ({ ...e, [name]: ui.invalidNumber }));
-          return false;
-        }
-      }
-      setErrors((e) => {
-        const copy = { ...e };
-        delete copy[name];
-        return copy;
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd,
       });
-      return true;
-    }
 
-    if (!value || String(value).trim() === "") {
-      setErrors((e) => ({ ...e, [name]: ui.requiredField }));
-      return false;
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Помилка збереження");
+      }
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
-
-    setErrors((e) => {
-      const copy = { ...e };
-      delete copy[name];
-      return copy;
-    });
-    return true;
   }
+
+  if (!open) return null;
+
+  const existingPhotos = (initial?.photos ?? []).filter(
+    (p) => !removeIds.includes(p.publicId)
+  );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/55 p-4 backdrop-blur-sm sm:items-center">
-      <button type="button" aria-label={ui.cancel} className="absolute inset-0 cursor-default" onClick={onClose} />
-
-      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900">
-        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/70 sm:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">{ui.addCatch}</p>
-          <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{ui.formTitle}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{ui.formDescription}</p>
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/60 p-4 backdrop-blur-sm sm:items-center">
+      <button
+        type="button"
+        aria-label="Закрити"
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 max-h-[95vh] flex flex-col">
+        {/* Header */}
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/70 shrink-0">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
+            {isEdit ? "Редагувати запис" : "Новий запис"}
+          </p>
+          <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
+            {isEdit ? "Зміна улову" : "Додати улов"}
+          </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid gap-4 px-6 py-6 sm:grid-cols-2 sm:px-8">
-          <label className="space-y-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            <span>{ui.date}</span>
-            <DatePicker
-              value={draft.date}
-              onChange={(v) => setDraft((current) => ({ ...current, date: v }))}
-              placeholder={ui.date}
-              locale={language}
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className="overflow-y-auto flex-1 px-6 py-5 sm:px-8 space-y-5"
+        >
+          {/* Водойма */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+              Водойма *
+            </label>
+            <WaterbodySelector
+              value={draft.waterbodyId}
+              displayName={draft.waterbodyName}
+              onChange={(id, name) =>
+                setDraft((d) => ({ ...d, waterbodyId: id, waterbodyName: name }))
+              }
             />
-            {errors.date ? <p className="mt-2 text-xs text-red-600">{errors.date}</p> : null}
-          </label>
+          </div>
 
-          <label className="space-y-2 text-sm font-semibold text-slate-700 dark:text-slate-200 relative">
-            <span>{ui.place}</span>
-            <div className="relative">
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* Дата */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                Дата *
+              </label>
+              <input
+                type="date"
+                value={draft.date}
+                onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
+
+            {/* Вид риби */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                Вид риби *
+              </label>
               <input
                 type="text"
-                value={draft.place}
-                onChange={(event) => setDraft((current) => ({ ...current, place: event.target.value }))}
-                onFocus={() => setPlaceOpen(true)}
-                onBlur={() => setTimeout(() => { validateField("place"); setPlaceOpen(false); }, 120)}
-                placeholder={ui.placePlaceholder}
+                value={draft.species}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    species:
+                      e.target.value.charAt(0).toUpperCase() +
+                      e.target.value.slice(1),
+                  }))
+                }
+                placeholder="Короп, Щука, Карась…"
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
-
-              {placeOpen && (((waterCardsData as unknown) as Record<string, any>)[language] ?? ((waterCardsData as unknown) as Record<string, any>).en).filter((w: any) => w.name.toLowerCase().includes(draft.place.toLowerCase())).slice(0,8).length > 0 ? (
-                <div className="absolute left-0 right-0 z-50 mt-2 max-h-56 overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
-                  {(((waterCardsData as unknown) as Record<string, any>)[language] ?? ((waterCardsData as unknown) as Record<string, any>).en)
-                    .filter((w: any) => w.name.toLowerCase().includes(draft.place.toLowerCase()))
-                    .slice(0, 8)
-                    .map((w: any) => (
-                      <button
-                        key={w.id}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          setDraft((c) => ({ ...c, place: w.name }));
-                          setPlaceOpen(false);
-                          setErrors((e) => { const copy = { ...e }; delete copy.place; return copy; });
-                        }}
-                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800"
-                      >
-                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{w.name}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">{w.place}</div>
-                      </button>
-                    ))}
-                </div>
-              ) : null}
             </div>
-            {errors.place ? <p className="mt-2 text-xs text-red-600">{errors.place}</p> : null}
-          </label>
 
-          <label className="space-y-2 text-sm font-semibold text-slate-700 dark:text-slate-200 relative">
-            <span>{ui.species}</span>
-            <input
-              type="text"
-              value={draft.species}
-              onChange={(event) => {
-                setDraft((current) => ({ ...current, species: capitalizeFirstLetter(event.target.value) }));
-              }}
-              onBlur={() => validateField("species")}
-                placeholder={ui.speciesPlaceholder}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            {/* Кількість */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                Кількість риб *
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={draft.fishCount}
+                onChange={(e) => setDraft((d) => ({ ...d, fishCount: e.target.value }))}
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
+
+            {/* Найбільша риба — назва */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                Трофей — назва
+              </label>
+              <input
+                type="text"
+                value={draft.biggestFishName}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, biggestFishName: e.target.value }))
+                }
+                placeholder="Нар'язний короп (необов'язково)"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
+
+            {/* Найбільша риба — вага */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+                Трофей — вага (кг)
+              </label>
+              <input
+                type="number"
+                min="0.1"
+                step="0.01"
+                value={draft.biggestFishWeight}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, biggestFishWeight: e.target.value }))
+                }
+                placeholder="5.3"
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+            </div>
+          </div>
+
+          {/* Нотатки */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+              Нотатки
+            </label>
+            <textarea
+              value={draft.notes}
+              onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+              placeholder="Що клювало, на що, погода, настрій…"
+              rows={3}
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 resize-none focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
-            {errors.species ? <p className="mt-2 text-xs text-red-600">{errors.species}</p> : null}
-          </label>
+          </div>
 
-          <label className="space-y-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            <span>{ui.fishCount}</span>
+          {/* Фото */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
+              Фото улову
+            </label>
+
+            {/* Existing photos (edit mode) */}
+            {existingPhotos.length > 0 && (
+              <div className="mb-3">
+                <PhotoGrid
+                  photos={existingPhotos}
+                  onRemove={(publicId) =>
+                    setRemoveIds((prev) => [...prev, publicId])
+                  }
+                />
+              </div>
+            )}
+
+            {/* New photo previews */}
+            {photoPreviews.length > 0 && (
+              <div
+                className={`mb-3 grid gap-2 ${
+                  photoPreviews.length === 1
+                    ? "grid-cols-1"
+                    : photoPreviews.length === 2
+                    ? "grid-cols-2"
+                    : "grid-cols-3"
+                }`}
+              >
+                {photoPreviews.map((src, i) => (
+                  <div
+                    key={i}
+                    className="relative group overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800"
+                    style={{ aspectRatio: "4/3" }}
+                  >
+                    <div
+                      className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
+                      style={{ backgroundImage: `url(${src})` }}
+                    />
+                    <img
+                      src={src}
+                      alt=""
+                      className="relative z-10 w-full h-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePreview(i)}
+                      className="absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition shadow"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+            >
+              <Camera className="h-4 w-4" />
+              Додати фото
+            </button>
             <input
-              type="number"
-              min="1"
-              step="1"
-              value={draft.fishCount}
-              onChange={(event) => setDraft((current) => ({ ...current, fishCount: event.target.value }))}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleFilePick}
             />
-            {errors.fishCount ? <p className="mt-2 text-xs text-red-600">{errors.fishCount}</p> : null}
-          </label>
+          </div>
 
-          <label className="space-y-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            <span>{ui.biggestFishName}</span>
-            <input
-              type="text"
-              value={draft.biggestFishName}
-              onChange={(event) => setDraft((current) => ({ ...current, biggestFishName: event.target.value }))}
-                placeholder={ui.biggestFishNamePlaceholder}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
-            <p className="mt-2 text-xs text-slate-500">{ui.optionalHint}</p>
-          </label>
+          {error && (
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+              {error}
+            </p>
+          )}
 
-          <label className="space-y-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            <span>{ui.biggestFishWeight}</span>
-            <input
-              type="number"
-              min="0.1"
-              step="0.1"
-              value={draft.biggestFishWeight}
-              onChange={(event) => setDraft((current) => ({ ...current, biggestFishWeight: event.target.value }))}
-                placeholder={ui.biggestFishWeightPlaceholder}
-              className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            />
-            {errors.biggestFishWeight ? <p className="mt-2 text-xs text-red-600">{errors.biggestFishWeight}</p> : <p className="mt-2 text-xs text-slate-500">{ui.emptyWeightHint}</p>}
-          </label>
-
-          <div className="sm:col-span-2 mt-2 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          {/* Actions */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
+              className="inline-flex h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
             >
-              {ui.cancel}
+              Скасувати
             </button>
             <button
               type="submit"
-              className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              disabled={saving}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
-              {ui.save}
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              {saving ? "Зберігаємо…" : isEdit ? "Зберегти зміни" : "Додати запис"}
             </button>
           </div>
         </form>
@@ -540,304 +687,470 @@ function AddCatchDialog({
   );
 }
 
-export default function StatsDashboard() {
-  const { language, catches, addCatch, removeCatch, clearCatches, user, openAuth } = useAppUI();
-  const copy = getUiCopy(language);
-  const ui = copy.stats;
-  const resolveSpeciesName = useMemo(
-    () => buildLocalizedNameResolver(fishCardsData as Record<string, NamedCard[]>, language),
-    [language],
-  );
-  const resolveWaterName = useMemo(
-    () => buildLocalizedNameResolver(waterCardsData as Record<string, NamedCard[]>, language),
-    [language],
-  );
-  const [isAddCatchOpen, setIsAddCatchOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+// ─── Catch Card ───────────────────────────────────────────────
+function CatchCard({
+  record,
+  onEdit,
+  onDelete,
+}: {
+  record: CatchRecord;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
 
-  const sortedCatches = useMemo(() => sortByDateDescending(catches), [catches]);
-  const totalCatches = useMemo(
-    () => sortedCatches.reduce((sum, catchRecord) => sum + catchRecord.fishCount, 0),
-    [sortedCatches],
-  );
-  const biggestCatch = useMemo(() => {
-    const catchesWithTrophy = sortedCatches.filter((catchRecord) => catchRecord.biggestFishName.trim().length > 0 && catchRecord.biggestFishWeight > 0);
+  return (
+    <article className="rounded-[1.75rem] border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+      {/* Top: preview photo or gradient */}
+      {record.photos.length > 0 ? (
+        <div
+          className="relative h-44 bg-slate-100 dark:bg-slate-800 overflow-hidden cursor-pointer"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <div
+            className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
+            style={{ backgroundImage: `url(${record.photos[0].url})` }}
+          />
+          <img
+            src={record.photos[0].url}
+            alt="Улов"
+            className="relative z-10 w-full h-full object-contain"
+          />
+          {record.photos.length > 1 && (
+            <div className="absolute bottom-3 right-3 z-20 rounded-full bg-black/50 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+              +{record.photos.length - 1} фото
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="h-24 bg-[linear-gradient(135deg,#dbeafe_0%,#e0f2fe_50%,#d1fae5_100%)] flex items-center justify-center">
+          <Fish className="h-10 w-10 text-blue-300" />
+        </div>
+      )}
 
-    if (catchesWithTrophy.length === 0) {
-      return null;
+      {/* Info */}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-bold text-slate-900 dark:text-slate-100 truncate">
+              {record.species}
+            </p>
+            <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{record.waterbodyName}</span>
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-lg font-black text-blue-600">{record.fishCount} шт</p>
+            <p className="text-xs text-slate-400">{formatDate(record.date)}</p>
+          </div>
+        </div>
+
+        {/* Badges */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {record.biggestFishName && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+              <Trophy className="h-3 w-3" />
+              {record.biggestFishName}
+              {record.biggestFishWeight > 0 && ` · ${record.biggestFishWeight} кг`}
+            </span>
+          )}
+          {record.notes && (
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400 line-clamp-1 max-w-[200px]">
+              {record.notes}
+            </span>
+          )}
+        </div>
+
+        {/* Expand toggle */}
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition dark:text-blue-400"
+        >
+          {expanded ? (
+            <><ChevronUp className="h-3.5 w-3.5" /> Згорнути</>
+          ) : (
+            <><ChevronDown className="h-3.5 w-3.5" /> Детальніше</>
+          )}
+        </button>
+
+        {/* Expanded content */}
+        {expanded && (
+          <div className="mt-4 space-y-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+            {/* Mini map */}
+            {record.waterbodyCoords && (
+              <MiniMap
+                lat={record.waterbodyCoords.lat}
+                lng={record.waterbodyCoords.lng}
+                name={record.waterbodyName}
+              />
+            )}
+
+            {/* All photos */}
+            {record.photos.length > 1 && (
+              <PhotoGrid photos={record.photos} />
+            )}
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-2xl bg-slate-50 p-3 text-center dark:bg-slate-950/60">
+                <CalendarDays className="mx-auto h-4 w-4 text-slate-400 mb-1" />
+                <p className="text-xs text-slate-500">{formatDate(record.date)}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-3 text-center dark:bg-slate-950/60">
+                <Fish className="mx-auto h-4 w-4 text-blue-400 mb-1" />
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{record.fishCount} шт</p>
+              </div>
+              {record.biggestFishWeight > 0 && (
+                <div className="rounded-2xl bg-slate-50 p-3 text-center dark:bg-slate-950/60">
+                  <Scale className="mx-auto h-4 w-4 text-amber-400 mb-1" />
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{record.biggestFishWeight} кг</p>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onEdit}
+                className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              >
+                <Edit3 className="h-3.5 w-3.5" />
+                Редагувати
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:border-red-800"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Видалити
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+// ─── Confirm Dialog ───────────────────────────────────────────
+function ConfirmDialog({
+  open,
+  title,
+  description,
+  onClose,
+  onConfirm,
+}: {
+  open: boolean;
+  title: string;
+  description: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/65 px-4 backdrop-blur-md">
+      <button type="button" className="absolute inset-0 cursor-default" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900">
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/70">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-red-600 dark:text-red-300">Підтвердження</p>
+          <h3 className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{title}</h3>
+        </div>
+        <div className="px-6 py-5">
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+            >
+              Скасувати
+            </button>
+            <button
+              type="button"
+              onClick={() => { onConfirm(); onClose(); }}
+              className="inline-flex h-11 items-center justify-center rounded-full bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-700"
+            >
+              Видалити
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────
+export default function CatchesPage() {
+  const [catches, setCatches] = useState<CatchRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<CatchRecord | undefined>();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [tab, setTab] = useState<"list" | "stats">("list");
+
+  const fetchCatches = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/catches/my`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error("error");
+      const data = await res.json();
+      setCatches(Array.isArray(data) ? data : []);
+    } catch {
+      setCatches([]);
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    return [...catchesWithTrophy].sort((leftCatch, rightCatch) => rightCatch.biggestFishWeight - leftCatch.biggestFishWeight)[0] ?? null;
-  }, [sortedCatches]);
-  const recentTripGroups = useMemo(() => groupCatchesByPlace(sortedCatches).slice(0, 3), [sortedCatches]);
-  const speciesStats = useMemo(() => {
-    const speciesMap = new Map<string, number>();
+  useEffect(() => { fetchCatches(); }, [fetchCatches]);
 
-    for (const catchRecord of sortedCatches) {
-      speciesMap.set(catchRecord.species, (speciesMap.get(catchRecord.species) ?? 0) + catchRecord.fishCount);
-    }
+  async function handleDelete(id: string) {
+    try {
+      await fetch(`${API_BASE}/api/catches/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      fetchCatches();
+    } catch {}
+  }
 
-    return Array.from(speciesMap.entries())
-      .sort((leftEntry, rightEntry) => rightEntry[1] - leftEntry[1])
-      .map(([name, count], index) => ({
-        name: resolveSpeciesName(name),
-        count,
-        accent: speciesAccentClasses[index % speciesAccentClasses.length],
-      }))
-      .slice(0, 6);
-  }, [resolveSpeciesName, sortedCatches]);
-
-  const hasCatches = sortedCatches.length > 0;
-  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
-  const confirmDialog =
-    confirmAction === null
-      ? null
-      : confirmAction.type === "clear"
-        ? {
-            title: ui.confirmClearTitle,
-            description: ui.confirmClearDescription,
-            confirmLabel: ui.confirmClearLabel,
-            onConfirm: () => clearCatches(),
-          }
-        : {
-            title: ui.confirmDeleteTitle,
-            description: ui.confirmDeleteDescription,
-            confirmLabel: ui.confirmDeleteLabel,
-            onConfirm: () => removeCatch(confirmAction.id),
-          };
+  // Stats
+  const totalFish = catches.reduce((s, c) => s + c.fishCount, 0);
+  const biggestCatch = catches
+    .filter((c) => c.biggestFishWeight > 0 && c.biggestFishName)
+    .sort((a, b) => b.biggestFishWeight - a.biggestFishWeight)[0];
+  const speciesMap = new Map<string, number>();
+  catches.forEach((c) => speciesMap.set(c.species, (speciesMap.get(c.species) ?? 0) + c.fishCount));
+  const topSpecies = Array.from(speciesMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
 
   return (
     <>
-      <ConfirmDialog
-        open={confirmAction !== null}
-        language={language}
-        title={confirmDialog?.title ?? ""}
-        description={confirmDialog?.description ?? ""}
-        confirmLabel={confirmDialog?.confirmLabel ?? ""}
-        onClose={() => setConfirmAction(null)}
-        onConfirm={() => {
-          confirmDialog?.onConfirm();
-          setConfirmAction(null);
-        }}
+      {/* Dialogs */}
+      <CatchDialog
+        open={dialogOpen}
+        initial={editTarget}
+        onClose={() => { setDialogOpen(false); setEditTarget(undefined); }}
+        onSaved={fetchCatches}
       />
-      <main className="mx-auto max-w-7xl px-4 py-6 transition-colors duration-200 sm:px-6 lg:px-8 lg:py-8 dark:bg-slate-950">
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Видалити запис?"
+        description="Це незворотня дія. Запис та всі фото будуть видалені назавжди."
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+      />
+
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 transition-colors duration-200 dark:bg-slate-950 min-h-screen">
+        {/* Page header */}
         <section className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-blue-600 dark:text-blue-300">{copy.stats.label}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-blue-600 dark:text-blue-300">
+            Мій щоденник
+          </p>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-slate-100">
-            {copy.stats.title}
+            Записи улову
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            {copy.stats.description}
+            Ведіть особистий журнал рибальських виходів — дата, водойма, вид, кількість та фото трофеїв.
           </p>
         </section>
 
-        {hasCatches ? (
-          <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-            <section className="space-y-6">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100">{copy.stats.recentTripsTitle}</h2>
-                    <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      {copy.stats.recentTripsDescription}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!user) {
-                          openAuth("login");
-                          return;
-                        }
+        {/* Tabs + Add button */}
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 w-fit dark:border-slate-800 dark:bg-slate-900">
+            {(["list", "stats"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={`h-9 rounded-xl px-4 text-sm font-semibold transition ${
+                  tab === t
+                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                }`}
+              >
+                {t === "list" ? (
+                  <span className="flex items-center gap-2"><Fish className="h-4 w-4" /> Записи</span>
+                ) : (
+                  <span className="flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Статистика</span>
+                )}
+              </button>
+            ))}
+          </div>
 
-                        setIsAddCatchOpen(true);
-                      }}
-                      className="inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      {ui.addCatch}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmAction({ type: "clear" })}
-                      className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-red-300 hover:text-red-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                    >
-                      {ui.clearAll}
-                    </button>
-                    <Link
-                      href="/map"
-                      className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-blue-200 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-blue-400/40 dark:hover:text-blue-300"
-                    >
-                      {copy.stats.goToMap}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </div>
+          <button
+            type="button"
+            onClick={() => { setEditTarget(undefined); setDialogOpen(true); }}
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            Додати улов
+          </button>
+        </div>
+
+        {/* ── LIST TAB ── */}
+        {tab === "list" && (
+          <div className="mt-6">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              </div>
+            ) : catches.length === 0 ? (
+              <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
+                  <Fish className="h-8 w-8" />
                 </div>
+                <h2 className="mt-5 text-2xl font-black text-slate-900 dark:text-slate-100">
+                  Ще немає жодного запису
+                </h2>
+                <p className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-300">
+                  Зловіть першу рибу й занесіть результат до щоденника!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setDialogOpen(true)}
+                  className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  <Plus className="h-4 w-4" />
+                  Додати перший улов
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {catches.map((record) => (
+                  <CatchCard
+                    key={record._id}
+                    record={record}
+                    onEdit={() => { setEditTarget(record); setDialogOpen(true); }}
+                    onDelete={() => setDeleteTarget(record._id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-                <div className="mt-6 space-y-4">
-                  {recentTripGroups.map((tripGroup) => {
-                    const isOpen = openGroupId === tripGroup.id;
+        {/* ── STATS TAB ── */}
+        {tab === "stats" && (
+          <div className="mt-6 space-y-6">
+            {/* Summary cards */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <BarChart3 className="mx-auto h-6 w-6 text-blue-500 mb-2" />
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Виходів</p>
+                <p className="mt-1 text-4xl font-black text-slate-900 dark:text-slate-100">{catches.length}</p>
+              </div>
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <Fish className="mx-auto h-6 w-6 text-emerald-500 mb-2" />
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Риб зловлено</p>
+                <p className="mt-1 text-4xl font-black text-slate-900 dark:text-slate-100">{totalFish}</p>
+              </div>
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <Trophy className="mx-auto h-6 w-6 text-amber-500 mb-2" />
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Найбільший трофей</p>
+                <p className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
+                  {biggestCatch ? `${biggestCatch.biggestFishWeight} кг` : "—"}
+                </p>
+                {biggestCatch && (
+                  <p className="mt-0.5 text-xs text-slate-400">{biggestCatch.biggestFishName}</p>
+                )}
+              </div>
+            </div>
 
+            {/* Biggest catch card */}
+            {biggestCatch && (
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4">
+                  🏆 Найбільший улов
+                </h3>
+                <div className="flex items-start gap-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{biggestCatch.biggestFishName}</p>
+                    <p className="mt-1 text-sm text-slate-500">{biggestCatch.species} · {biggestCatch.waterbodyName}</p>
+                    <div className="mt-3 flex gap-4">
+                      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        <Scale className="h-4 w-4 text-amber-500" />
+                        {biggestCatch.biggestFishWeight} кг
+                      </div>
+                      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                        <CalendarDays className="h-4 w-4 text-slate-400" />
+                        {formatDate(biggestCatch.date)}
+                      </div>
+                    </div>
+                  </div>
+                  {biggestCatch.photos.length > 0 && (
+                    <div className="shrink-0 w-28 h-28 rounded-2xl overflow-hidden relative bg-slate-100">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
+                        style={{ backgroundImage: `url(${biggestCatch.photos[0].url})` }}
+                      />
+                      <img
+                        src={biggestCatch.photos[0].url}
+                        alt=""
+                        className="relative z-10 w-full h-full object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+                {biggestCatch.waterbodyCoords && (
+                  <div className="mt-4">
+                    <MiniMap
+                      lat={biggestCatch.waterbodyCoords.lat}
+                      lng={biggestCatch.waterbodyCoords.lng}
+                      name={biggestCatch.waterbodyName}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Species stats */}
+            {topSpecies.length > 0 && (
+              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4">
+                  За видами
+                </h3>
+                <div className="space-y-3">
+                  {topSpecies.map(([name, count], i) => {
+                    const pct = Math.round((count / totalFish) * 100);
+                    const colors = [
+                      "bg-blue-500", "bg-emerald-500", "bg-amber-500",
+                      "bg-rose-500", "bg-violet-500", "bg-sky-500",
+                    ];
                     return (
-                      <article
-                        key={tripGroup.id}
-                        className="relative rounded-[1.75rem] border border-slate-200 p-4 transition hover:border-blue-200 hover:shadow-md dark:border-slate-800 dark:hover:border-blue-400/40"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <TripPreview
-                              fishCount={formatFishCount(language, tripGroup.totalFishCount)}
-                              mapHref={`/map?spot=${encodeURIComponent(resolveWaterName(tripGroup.place))}`}
-                              ariaLabel={copy.stats.goToMap}
-                            />
-                            <div className="mt-4 flex flex-col gap-2">
-                              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                                {resolveWaterName(tripGroup.place)}
-                              </p>
-                              <p className="text-sm text-slate-600 dark:text-slate-300">
-                                {tripGroup.entries.length} {ui.visitsLabel} · {tripGroup.totalFishCount} {ui.fishLabel}
-                              </p>
-                              {tripGroup.speciesSummary.length > 0 ? (
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
-                                  {tripGroup.speciesSummary.map((item) => `${item.count} ${resolveSpeciesName(item.species)}`).join(" · ")}
-                                </p>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col items-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setOpenGroupId(isOpen ? null : tripGroup.id)}
-                              className="inline-flex h-8 items-center justify-center rounded-full bg-slate-900 px-3 text-xs font-semibold text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
-                            >
-                              {isOpen ? ui.hideDetailsLabel : ui.detailsLabel}
-                            </button>
-                          </div>
+                      <div key={name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{name}</span>
+                          <span className="text-sm text-slate-500">{count} шт · {pct}%</span>
                         </div>
-
-                        {isOpen ? (
-                          <div className="mt-4 space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              {tripGroup.entries.map((entry) => (
-                                <EntrySummary
-                                  key={entry.id}
-                                  entry={entry}
-                                  language={language}
-                                  resolveSpeciesName={resolveSpeciesName}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
-                      </article>
+                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${colors[i % colors.length]} transition-all`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
               </div>
-            </section>
+            )}
 
-            <aside className="space-y-6">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-center text-lg font-bold text-slate-700 dark:text-slate-200">{copy.stats.totalCatchesTitle}</p>
-                <div className="mt-6 text-center text-5xl font-black text-slate-900 dark:text-slate-100">{totalCatches}</div>
-                <div className="mt-5 flex items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-                  <BarChart3 className="h-4 w-4 text-blue-600" />
-                  {copy.stats.totalCatchesCaption}
-                </div>
+            {catches.length === 0 && (
+              <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+                <p className="text-slate-500">Додайте перший запис, щоб бачити статистику</p>
               </div>
-
-              {biggestCatch ? (
-                <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                  <p className="text-lg font-bold text-slate-700 dark:text-slate-200">{copy.stats.biggestFishTitle}</p>
-                  <div className="mt-4 flex items-start gap-4">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-3xl font-black text-slate-900 dark:text-slate-100">{biggestCatch.biggestFishName}</h3>
-                      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                        {formatDateLabel(biggestCatch.date)} · {biggestCatch.place}
-                      </p>
-                      <div className="mt-4 rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/70">
-                        <div className="flex items-center justify-center rounded-[1.5rem] bg-white p-5 shadow-sm dark:bg-slate-900">
-                          <Fish className="h-16 w-16 text-amber-700" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4 pt-10 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      <div className="flex items-center gap-3">
-                        <Scale className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-                        <span>{biggestCatch.biggestFishWeight} kg</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <CalendarDays className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-                        <span>{formatDateLabel(biggestCatch.date)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-center text-lg font-bold text-slate-700 dark:text-slate-200">{copy.stats.successBySpeciesTitle}</p>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {speciesStats.map((species) => (
-                    <div
-                      key={species.name}
-                      className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:gap-3 dark:border-slate-800 dark:bg-slate-950/70"
-                    >
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                        <Fish className="h-6 w-6" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-base font-medium leading-tight text-slate-900 dark:text-slate-100">{species.name}</p>
-                      </div>
-                      <div className={`shrink-0 text-sm font-bold whitespace-nowrap sm:text-right ${species.accent}`}>
-                        {formatFishCount(language, species.count)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </aside>
-          </div>
-        ) : (
-          <div className="mt-8 grid gap-6">
-            <section className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-10">
-              <div className="mx-auto flex max-w-2xl flex-col items-center text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
-                  <Fish className="h-8 w-8" />
-                </div>
-                <h2 className="mt-5 text-2xl font-black text-slate-900 dark:text-slate-100">{ui.emptyTitle}</h2>
-                <p className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-300">{ui.emptyDescription}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!user) {
-                      openAuth("login");
-                      return;
-                    }
-
-                    setIsAddCatchOpen(true);
-                  }}
-                  className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  {ui.addCatch}
-                </button>
-                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{ui.addCatchHint}</p>
-              </div>
-            </section>
+            )}
           </div>
         )}
       </main>
-
-      <AddCatchDialog
-        open={isAddCatchOpen}
-        language={language}
-        onClose={() => setIsAddCatchOpen(false)}
-        onSubmit={addCatch}
-      />
     </>
   );
 }
