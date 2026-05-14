@@ -1148,6 +1148,112 @@ app.get('/api/catches/stats/summary', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── PUT /api/catches/:id — оновити запис ─────────────────────
+// ВИПРАВЛЕНИЙ МАРШРУТ: замінити існуючий PUT /api/catches/:id у server.js
+app.put(
+  '/api/catches/:id',
+  authMiddleware,
+  uploadCatch.array('photos', 10),
+  async (req, res) => {
+    try {
+      const existing = await db
+        .collection('catches')
+        .findOne({ _id: new ObjectId(req.params.id) });
+
+      if (!existing) {
+        return res.status(404).json({ error: 'Запис не знайдено' });
+      }
+
+      // Тільки власник або адмін може редагувати
+      if (req.user.role !== 'admin' && existing.userId !== req.user.userId) {
+        return res.status(403).json({ error: 'Доступ заборонено' });
+      }
+
+      const {
+        waterbodyId,
+        date,
+        species,
+        fishCount,
+        biggestFishName,
+        biggestFishWeight,
+        notes,
+        removePhotos,
+      } = req.body;
+
+      // ── ВИПРАВЛЕННЯ: оновлюємо дані водойми якщо змінився waterbodyId ──
+      let waterbodyName = existing.waterbodyName;
+      let waterbodyCoords = existing.waterbodyCoords;
+
+      if (waterbodyId && waterbodyId !== existing.waterbodyId) {
+        let waterbody = null;
+        try {
+          waterbody = await db
+            .collection('waterbodies')
+            .findOne({ _id: new ObjectId(waterbodyId) });
+        } catch {
+          return res.status(400).json({ error: 'Невірний ID водойми' });
+        }
+
+        if (!waterbody) {
+          return res.status(404).json({ error: 'Водойму не знайдено' });
+        }
+
+        waterbodyName = waterbody.name;
+        waterbodyCoords = waterbody.location?.coordinates
+          ? { lng: waterbody.location.coordinates[0], lat: waterbody.location.coordinates[1] }
+          : null;
+      }
+
+      let currentPhotos = existing.photos || [];
+
+      // Видаляємо вибрані фото
+      if (removePhotos) {
+        const toRemove = parseJsonField(removePhotos, []);
+        for (const publicId of toRemove) {
+          try { await cloudinary.uploader.destroy(publicId); } catch (_) {}
+        }
+        currentPhotos = currentPhotos.filter((p) => !toRemove.includes(p.publicId));
+      }
+
+      // Додаємо нові фото
+      if (req.files && req.files.length > 0) {
+        currentPhotos = [
+          ...currentPhotos,
+          ...req.files.map((f) => ({ url: f.path, publicId: f.filename })),
+        ];
+      }
+
+      const update = {
+        // ── Оновлюємо waterbodyId та пов'язані поля якщо змінились ──
+        waterbodyId: waterbodyId || existing.waterbodyId,
+        waterbodyName,
+        waterbodyCoords,
+        date: date || existing.date,
+        species: String(species || existing.species).trim(),
+        fishCount: Math.max(1, parseInt(fishCount) || existing.fishCount),
+        biggestFishName: String(
+          biggestFishName !== undefined ? biggestFishName : existing.biggestFishName
+        ).trim(),
+        biggestFishWeight:
+          biggestFishWeight !== undefined
+            ? parseFloat(biggestFishWeight) || 0
+            : existing.biggestFishWeight,
+        notes: String(notes !== undefined ? notes : existing.notes).trim(),
+        photos: currentPhotos,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await db
+        .collection('catches')
+        .updateOne({ _id: new ObjectId(req.params.id) }, { $set: update });
+
+      res.json({ message: 'Запис оновлено', _id: req.params.id });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // ============================================================
 //  STATS
 // ============================================================
