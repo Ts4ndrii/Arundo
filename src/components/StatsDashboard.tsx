@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Fish, Plus, X, CalendarDays, Scale, MapPin, Camera,
-  ChevronDown, ChevronUp, Trash2, Edit3, Check, Loader2,
-  BarChart3, Trophy, Waves, ArrowLeft
+  ChevronDown, ChevronUp, Trash2, Edit3, Loader2,
+  BarChart3, Trophy, Waves, UserPlus, LogIn,
 } from "lucide-react";
+import { useAppUI } from "@/components/AppShell";
 
 // ─── Types ────────────────────────────────────────────────────
 type Waterbody = {
@@ -67,7 +68,75 @@ function formatDate(d: string) {
   return `${day}.${m}.${y}`;
 }
 
-// ─── Mini Static Map (via Leaflet CDN in iframe) ──────────────
+// ─── Auth Gate ────────────────────────────────────────────────
+function AuthGate() {
+  const { openAuth } = useAppUI();
+
+  return (
+    <div className="rounded-[2rem] border border-slate-200 bg-white overflow-hidden shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* Decorative top bar */}
+      <div className="h-2 bg-gradient-to-r from-blue-500 via-blue-400 to-emerald-400" />
+
+      <div className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
+        {/* Icon */}
+        <div className="relative mb-6">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-600/10 dark:bg-blue-500/10">
+            <Fish className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-amber-400 shadow-lg">
+            <Trophy className="h-4 w-4 text-white" />
+          </div>
+        </div>
+
+        <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 sm:text-3xl">
+          Ведіть щоденник уловів
+        </h2>
+        <p className="mt-3 max-w-sm text-base leading-7 text-slate-600 dark:text-slate-300">
+          Зареєструйтесь або увійдіть, щоб записувати улови, додавати фото та переглядати особисту статистику.
+        </p>
+
+        {/* Feature list */}
+        <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3 text-sm">
+          {[
+            { icon: "📍", text: "Прив'язка до водойми" },
+            { icon: "📷", text: "Фото трофеїв" },
+            { icon: "📊", text: "Особиста статистика" },
+          ].map((f) => (
+            <div
+              key={f.text}
+              className="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-2.5 dark:bg-slate-800/60"
+            >
+              <span className="text-base">{f.icon}</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">{f.text}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* CTA buttons */}
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => openAuth("register")}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700"
+          >
+            <UserPlus className="h-4 w-4" />
+            Зареєструватись
+          </button>
+          <button
+            type="button"
+            onClick={() => openAuth("login")}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:bg-blue-950/20"
+          >
+            <LogIn className="h-4 w-4" />
+            Увійти
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mini Interactive Map ─────────────────────────────────────
 function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string }) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -76,8 +145,7 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
     if (typeof window === "undefined" || !mapRef.current) return;
     if (mapInstanceRef.current) return;
 
-    // Dynamically load Leaflet
-    const loadLeaflet = async () => {
+    const loadLeaflet = () => {
       if ((window as any).L) {
         initMap();
         return;
@@ -99,13 +167,16 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
       const map = L.map(mapRef.current, {
         center: [lat, lng],
         zoom: 13,
-        zoomControl: false,
-        scrollWheelZoom: false,
-        dragging: false,
-        doubleClickZoom: false,
+        zoomControl: true,
+        // ── Інтерактивна карта ──
+        scrollWheelZoom: true,
+        dragging: true,
+        doubleClickZoom: true,
         attributionControl: false,
       });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+      // Одна мітка — тільки вибрана водойма
       const icon = L.divIcon({
         className: "",
         html: `<div style="width:28px;height:28px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;">
@@ -114,7 +185,7 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       });
-      L.marker([lat, lng], { icon }).addTo(map).bindPopup(name);
+      L.marker([lat, lng], { icon }).addTo(map).bindPopup(name).openPopup();
       mapInstanceRef.current = map;
     };
 
@@ -130,7 +201,7 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
   return (
     <div
       ref={mapRef}
-      className="h-36 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
+      className="h-44 w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
     />
   );
 }
@@ -151,11 +222,7 @@ function PhotoGrid({
     <>
       <div
         className={`grid gap-2 ${
-          photos.length === 1
-            ? "grid-cols-1"
-            : photos.length === 2
-            ? "grid-cols-2"
-            : "grid-cols-3"
+          photos.length === 1 ? "grid-cols-1" : photos.length === 2 ? "grid-cols-2" : "grid-cols-3"
         }`}
       >
         {photos.map((photo) => (
@@ -165,24 +232,15 @@ function PhotoGrid({
             style={{ aspectRatio: "4/3" }}
             onClick={() => setLightbox(photo.url)}
           >
-            {/* Blurred background fill */}
             <div
               className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
               style={{ backgroundImage: `url(${photo.url})` }}
             />
-            {/* Sharp image — object-contain so nothing is cropped */}
-            <img
-              src={photo.url}
-              alt="Фото улову"
-              className="relative z-10 w-full h-full object-contain"
-            />
+            <img src={photo.url} alt="Фото улову" className="relative z-10 w-full h-full object-contain" />
             {onRemove && (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove(photo.publicId);
-                }}
+                onClick={(e) => { e.stopPropagation(); onRemove(photo.publicId); }}
                 className="absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition shadow-lg"
               >
                 <X className="h-3.5 w-3.5" />
@@ -192,7 +250,6 @@ function PhotoGrid({
         ))}
       </div>
 
-      {/* Lightbox */}
       {lightbox && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm"
@@ -204,19 +261,12 @@ function PhotoGrid({
           >
             <X className="h-5 w-5" />
           </button>
-          <div
-            className="relative max-h-[90vh] max-w-[95vw]"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="relative max-h-[90vh] max-w-[95vw]" onClick={(e) => e.stopPropagation()}>
             <div
               className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-30"
               style={{ backgroundImage: `url(${lightbox})` }}
             />
-            <img
-              src={lightbox}
-              alt=""
-              className="relative z-10 max-h-[90vh] max-w-[95vw] object-contain rounded-xl shadow-2xl"
-            />
+            <img src={lightbox} alt="" className="relative z-10 max-h-[90vh] max-w-[95vw] object-contain rounded-xl shadow-2xl" />
           </div>
         </div>
       )}
@@ -252,9 +302,7 @@ function WaterbodySelector({
       .finally(() => setLoading(false));
   }, [open]);
 
-  const filtered = bodies.filter((b) =>
-    b.name.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = bodies.filter((b) => b.name.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <div className="relative">
@@ -298,18 +346,12 @@ function WaterbodySelector({
                 key={b._id}
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onChange(b._id, b.name);
-                  setQuery(b.name);
-                  setOpen(false);
-                }}
+                onClick={() => { onChange(b._id, b.name); setQuery(b.name); setOpen(false); }}
                 className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition"
               >
                 <MapPin className="h-4 w-4 shrink-0 text-blue-500" />
                 <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{b.name}</span>
-                {b.waterType && (
-                  <span className="ml-auto text-xs text-slate-400">{b.waterType}</span>
-                )}
+                {b.waterType && <span className="ml-auto text-xs text-slate-400">{b.waterType}</span>}
               </button>
             ))
           )}
@@ -342,15 +384,9 @@ function CatchDialog({
 
   function emptyDraft(): FormDraft {
     return {
-      waterbodyId: "",
-      waterbodyName: "",
-      date: todayISO(),
-      species: "",
-      fishCount: "1",
-      biggestFishName: "",
-      biggestFishWeight: "",
-      notes: "",
-      photos: [],
+      waterbodyId: "", waterbodyName: "", date: todayISO(),
+      species: "", fishCount: "1", biggestFishName: "",
+      biggestFishWeight: "", notes: "", photos: [],
     };
   }
 
@@ -358,23 +394,16 @@ function CatchDialog({
     if (!open) return;
     if (initial) {
       setDraft({
-        waterbodyId: initial.waterbodyId,
-        waterbodyName: initial.waterbodyName,
-        date: initial.date,
-        species: initial.species,
-        fishCount: String(initial.fishCount),
-        biggestFishName: initial.biggestFishName,
+        waterbodyId: initial.waterbodyId, waterbodyName: initial.waterbodyName,
+        date: initial.date, species: initial.species,
+        fishCount: String(initial.fishCount), biggestFishName: initial.biggestFishName,
         biggestFishWeight: initial.biggestFishWeight ? String(initial.biggestFishWeight) : "",
-        notes: initial.notes,
-        photos: [],
+        notes: initial.notes, photos: [],
       });
     } else {
       setDraft(emptyDraft());
     }
-    setPhotoFiles([]);
-    setPhotoPreviews([]);
-    setRemoveIds([]);
-    setError("");
+    setPhotoFiles([]); setPhotoPreviews([]); setRemoveIds([]); setError("");
   }, [open, initial]);
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -382,17 +411,10 @@ function CatchDialog({
     setPhotoFiles((prev) => [...prev, ...files]);
     files.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
-      };
+      reader.onload = (ev) => setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
       reader.readAsDataURL(file);
     });
     e.target.value = "";
-  }
-
-  function removePreview(index: number) {
-    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
-    setPhotoPreviews((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -402,8 +424,7 @@ function CatchDialog({
     if (!draft.species.trim()) { setError("Вкажіть вид риби"); return; }
     if (parseInt(draft.fishCount) < 1) { setError("Кількість риб має бути ≥ 1"); return; }
 
-    setSaving(true);
-    setError("");
+    setSaving(true); setError("");
     try {
       const fd = new FormData();
       fd.append("waterbodyId", draft.waterbodyId);
@@ -416,13 +437,9 @@ function CatchDialog({
       if (removeIds.length > 0) fd.append("removePhotos", JSON.stringify(removeIds));
       photoFiles.forEach((f) => fd.append("photos", f));
 
-      const url = isEdit
-        ? `${API_BASE}/api/catches/${initial!._id}`
-        : `${API_BASE}/api/catches`;
-      const method = isEdit ? "PUT" : "POST";
-
+      const url = isEdit ? `${API_BASE}/api/catches/${initial!._id}` : `${API_BASE}/api/catches`;
       const res = await fetch(url, {
-        method,
+        method: isEdit ? "PUT" : "POST",
         headers: { Authorization: `Bearer ${getToken()}` },
         body: fd,
       });
@@ -431,8 +448,7 @@ function CatchDialog({
         const data = await res.json();
         throw new Error(data.error ?? "Помилка збереження");
       }
-      onSaved();
-      onClose();
+      onSaved(); onClose();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -442,240 +458,148 @@ function CatchDialog({
 
   if (!open) return null;
 
-  const existingPhotos = (initial?.photos ?? []).filter(
-    (p) => !removeIds.includes(p.publicId)
-  );
+  const existingPhotos = (initial?.photos ?? []).filter((p) => !removeIds.includes(p.publicId));
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-950/60 p-4 backdrop-blur-sm sm:items-center">
-      <button
-        type="button"
-        aria-label="Закрити"
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-      />
-      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 max-h-[95vh] flex flex-col">
-        {/* Header */}
-        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/70 shrink-0">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
-            {isEdit ? "Редагувати запис" : "Новий запис"}
-          </p>
-          <h2 className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
-            {isEdit ? "Зміна улову" : "Додати улов"}
-          </h2>
+    // ── Фікс: items-start + pt-safe щоб не залазило під хедер ──
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/60 px-4 pt-20 pb-4 backdrop-blur-sm sm:items-center sm:pt-4">
+      <button type="button" aria-label="Закрити" className="absolute inset-0 cursor-default" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 flex flex-col"
+        style={{ maxHeight: "calc(100vh - 5rem)" }}
+      >
+        {/* Header — компактний */}
+        <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/70 shrink-0 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
+              {isEdit ? "Редагувати запис" : "Новий запис"}
+            </p>
+            <h2 className="mt-0.5 text-xl font-black text-slate-900 dark:text-slate-100">
+              {isEdit ? "Зміна улову" : "Додати улов"}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="overflow-y-auto flex-1 px-6 py-5 sm:px-8 space-y-5"
-        >
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-5 py-4 sm:px-7 space-y-4">
           {/* Водойма */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-              Водойма *
-            </label>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Водойма *</label>
             <WaterbodySelector
               value={draft.waterbodyId}
               displayName={draft.waterbodyName}
-              onChange={(id, name) =>
-                setDraft((d) => ({ ...d, waterbodyId: id, waterbodyName: name }))
-              }
+              onChange={(id, name) => setDraft((d) => ({ ...d, waterbodyId: id, waterbodyName: name }))}
             />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            {/* Дата */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-                Дата *
-              </label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Дата *</label>
               <input
-                type="date"
-                value={draft.date}
+                type="date" value={draft.date}
                 onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
-
-            {/* Вид риби */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-                Вид риби *
-              </label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Вид риби *</label>
               <input
-                type="text"
-                value={draft.species}
-                onChange={(e) =>
-                  setDraft((d) => ({
-                    ...d,
-                    species:
-                      e.target.value.charAt(0).toUpperCase() +
-                      e.target.value.slice(1),
-                  }))
-                }
+                type="text" value={draft.species}
+                onChange={(e) => setDraft((d) => ({ ...d, species: e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1) }))}
                 placeholder="Короп, Щука, Карась…"
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
-
-            {/* Кількість */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-                Кількість риб *
-              </label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Кількість риб *</label>
               <input
-                type="number"
-                min="1"
-                step="1"
-                value={draft.fishCount}
+                type="number" min="1" step="1" value={draft.fishCount}
                 onChange={(e) => setDraft((d) => ({ ...d, fishCount: e.target.value }))}
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
-
-            {/* Найбільша риба — назва */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-                Трофей — назва
-              </label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Трофей — назва</label>
               <input
-                type="text"
-                value={draft.biggestFishName}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, biggestFishName: e.target.value }))
-                }
-                placeholder="Нар'язний короп (необов'язково)"
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                type="text" value={draft.biggestFishName}
+                onChange={(e) => setDraft((d) => ({ ...d, biggestFishName: e.target.value }))}
+                placeholder="Необов'язково"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
-
-            {/* Найбільша риба — вага */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-                Трофей — вага (кг)
-              </label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Трофей — вага (кг)</label>
               <input
-                type="number"
-                min="0.1"
-                step="0.01"
-                value={draft.biggestFishWeight}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, biggestFishWeight: e.target.value }))
-                }
+                type="number" min="0.1" step="0.01" value={draft.biggestFishWeight}
+                onChange={(e) => setDraft((d) => ({ ...d, biggestFishWeight: e.target.value }))}
                 placeholder="5.3"
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
           </div>
 
-          {/* Нотатки */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-              Нотатки
-            </label>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Нотатки</label>
             <textarea
               value={draft.notes}
               onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
               placeholder="Що клювало, на що, погода, настрій…"
-              rows={3}
+              rows={2}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 resize-none focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
           </div>
 
           {/* Фото */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">
-              Фото улову
-            </label>
-
-            {/* Existing photos (edit mode) */}
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Фото улову</label>
             {existingPhotos.length > 0 && (
               <div className="mb-3">
-                <PhotoGrid
-                  photos={existingPhotos}
-                  onRemove={(publicId) =>
-                    setRemoveIds((prev) => [...prev, publicId])
-                  }
-                />
+                <PhotoGrid photos={existingPhotos} onRemove={(id) => setRemoveIds((p) => [...p, id])} />
               </div>
             )}
-
-            {/* New photo previews */}
             {photoPreviews.length > 0 && (
-              <div
-                className={`mb-3 grid gap-2 ${
-                  photoPreviews.length === 1
-                    ? "grid-cols-1"
-                    : photoPreviews.length === 2
-                    ? "grid-cols-2"
-                    : "grid-cols-3"
-                }`}
-              >
+              <div className={`mb-3 grid gap-2 ${photoPreviews.length === 1 ? "grid-cols-1" : photoPreviews.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
                 {photoPreviews.map((src, i) => (
-                  <div
-                    key={i}
-                    className="relative group overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800"
-                    style={{ aspectRatio: "4/3" }}
-                  >
-                    <div
-                      className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
-                      style={{ backgroundImage: `url(${src})` }}
-                    />
-                    <img
-                      src={src}
-                      alt=""
-                      className="relative z-10 w-full h-full object-contain"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removePreview(i)}
-                      className="absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition shadow"
-                    >
+                  <div key={i} className="relative group overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800" style={{ aspectRatio: "4/3" }}>
+                    <div className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60" style={{ backgroundImage: `url(${src})` }} />
+                    <img src={src} alt="" className="relative z-10 w-full h-full object-contain" />
+                    <button type="button" onClick={() => {
+                      setPhotoFiles((p) => p.filter((_, j) => j !== i));
+                      setPhotoPreviews((p) => p.filter((_, j) => j !== i));
+                    }} className="absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition shadow">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
             )}
-
             <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+              type="button" onClick={() => fileRef.current?.click()}
+              className="inline-flex h-10 items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
             >
-              <Camera className="h-4 w-4" />
-              Додати фото
+              <Camera className="h-4 w-4" /> Додати фото
             </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleFilePick}
-            />
+            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFilePick} />
           </div>
 
           {error && (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">{error}</p>
           )}
 
-          {/* Actions */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end pt-1 pb-2">
+            <button type="button" onClick={onClose}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
             >
               Скасувати
             </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+            <button type="submit" disabled={saving}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
               {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               {saving ? "Зберігаємо…" : isEdit ? "Зберегти зміни" : "Додати запис"}
@@ -688,34 +612,15 @@ function CatchDialog({
 }
 
 // ─── Catch Card ───────────────────────────────────────────────
-function CatchCard({
-  record,
-  onEdit,
-  onDelete,
-}: {
-  record: CatchRecord;
-  onEdit: () => void;
-  onDelete: () => void;
-}) {
+function CatchCard({ record, onEdit, onDelete }: { record: CatchRecord; onEdit: () => void; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <article className="rounded-[1.75rem] border border-slate-200 bg-white overflow-hidden shadow-sm transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-      {/* Top: preview photo or gradient */}
       {record.photos.length > 0 ? (
-        <div
-          className="relative h-44 bg-slate-100 dark:bg-slate-800 overflow-hidden cursor-pointer"
-          onClick={() => setExpanded((v) => !v)}
-        >
-          <div
-            className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
-            style={{ backgroundImage: `url(${record.photos[0].url})` }}
-          />
-          <img
-            src={record.photos[0].url}
-            alt="Улов"
-            className="relative z-10 w-full h-full object-contain"
-          />
+        <div className="relative h-44 bg-slate-100 dark:bg-slate-800 overflow-hidden cursor-pointer" onClick={() => setExpanded((v) => !v)}>
+          <div className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60" style={{ backgroundImage: `url(${record.photos[0].url})` }} />
+          <img src={record.photos[0].url} alt="Улов" className="relative z-10 w-full h-full object-contain" />
           {record.photos.length > 1 && (
             <div className="absolute bottom-3 right-3 z-20 rounded-full bg-black/50 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
               +{record.photos.length - 1} фото
@@ -728,13 +633,10 @@ function CatchCard({
         </div>
       )}
 
-      {/* Info */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 dark:text-slate-100 truncate">
-              {record.species}
-            </p>
+            <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{record.species}</p>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{record.waterbodyName}</span>
@@ -746,7 +648,6 @@ function CatchCard({
           </div>
         </div>
 
-        {/* Badges */}
         <div className="mt-3 flex flex-wrap gap-2">
           {record.biggestFishName && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
@@ -762,37 +663,19 @@ function CatchCard({
           )}
         </div>
 
-        {/* Expand toggle */}
         <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
+          type="button" onClick={() => setExpanded((v) => !v)}
           className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition dark:text-blue-400"
         >
-          {expanded ? (
-            <><ChevronUp className="h-3.5 w-3.5" /> Згорнути</>
-          ) : (
-            <><ChevronDown className="h-3.5 w-3.5" /> Детальніше</>
-          )}
+          {expanded ? <><ChevronUp className="h-3.5 w-3.5" /> Згорнути</> : <><ChevronDown className="h-3.5 w-3.5" /> Детальніше</>}
         </button>
 
-        {/* Expanded content */}
         {expanded && (
           <div className="mt-4 space-y-4 border-t border-slate-200 pt-4 dark:border-slate-800">
-            {/* Mini map */}
             {record.waterbodyCoords && (
-              <MiniMap
-                lat={record.waterbodyCoords.lat}
-                lng={record.waterbodyCoords.lng}
-                name={record.waterbodyName}
-              />
+              <MiniMap lat={record.waterbodyCoords.lat} lng={record.waterbodyCoords.lng} name={record.waterbodyName} />
             )}
-
-            {/* All photos */}
-            {record.photos.length > 1 && (
-              <PhotoGrid photos={record.photos} />
-            )}
-
-            {/* Stats row */}
+            {record.photos.length > 1 && <PhotoGrid photos={record.photos} />}
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-2xl bg-slate-50 p-3 text-center dark:bg-slate-950/60">
                 <CalendarDays className="mx-auto h-4 w-4 text-slate-400 mb-1" />
@@ -809,24 +692,16 @@ function CatchCard({
                 </div>
               )}
             </div>
-
-            {/* Actions */}
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onEdit}
+              <button type="button" onClick={onEdit}
                 className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
               >
-                <Edit3 className="h-3.5 w-3.5" />
-                Редагувати
+                <Edit3 className="h-3.5 w-3.5" /> Редагувати
               </button>
-              <button
-                type="button"
-                onClick={onDelete}
+              <button type="button" onClick={onDelete}
                 className="inline-flex h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 dark:border-slate-700 dark:bg-slate-950 dark:hover:border-red-800"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                Видалити
+                <Trash2 className="h-3.5 w-3.5" /> Видалити
               </button>
             </div>
           </div>
@@ -837,18 +712,8 @@ function CatchCard({
 }
 
 // ─── Confirm Dialog ───────────────────────────────────────────
-function ConfirmDialog({
-  open,
-  title,
-  description,
-  onClose,
-  onConfirm,
-}: {
-  open: boolean;
-  title: string;
-  description: string;
-  onClose: () => void;
-  onConfirm: () => void;
+function ConfirmDialog({ open, title, description, onClose, onConfirm }: {
+  open: boolean; title: string; description: string; onClose: () => void; onConfirm: () => void;
 }) {
   if (!open) return null;
   return (
@@ -862,16 +727,12 @@ function ConfirmDialog({
         <div className="px-6 py-5">
           <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">{description}</p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
+            <button type="button" onClick={onClose}
               className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
             >
               Скасувати
             </button>
-            <button
-              type="button"
-              onClick={() => { onConfirm(); onClose(); }}
+            <button type="button" onClick={() => { onConfirm(); onClose(); }}
               className="inline-flex h-11 items-center justify-center rounded-full bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-700"
             >
               Видалити
@@ -885,6 +746,7 @@ function ConfirmDialog({
 
 // ─── Main Page ────────────────────────────────────────────────
 export default function CatchesPage() {
+  const { user } = useAppUI();
   const [catches, setCatches] = useState<CatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -893,6 +755,7 @@ export default function CatchesPage() {
   const [tab, setTab] = useState<"list" | "stats">("list");
 
   const fetchCatches = useCallback(async () => {
+    if (!getToken()) { setLoading(false); return; }
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/catches/my`, {
@@ -920,20 +783,16 @@ export default function CatchesPage() {
     } catch {}
   }
 
-  // Stats
   const totalFish = catches.reduce((s, c) => s + c.fishCount, 0);
   const biggestCatch = catches
     .filter((c) => c.biggestFishWeight > 0 && c.biggestFishName)
     .sort((a, b) => b.biggestFishWeight - a.biggestFishWeight)[0];
   const speciesMap = new Map<string, number>();
   catches.forEach((c) => speciesMap.set(c.species, (speciesMap.get(c.species) ?? 0) + c.fishCount));
-  const topSpecies = Array.from(speciesMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6);
+  const topSpecies = Array.from(speciesMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
   return (
     <>
-      {/* Dialogs */}
       <CatchDialog
         open={dialogOpen}
         initial={editTarget}
@@ -962,193 +821,168 @@ export default function CatchesPage() {
           </p>
         </section>
 
-        {/* Tabs + Add button */}
-        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 w-fit dark:border-slate-800 dark:bg-slate-900">
-            {(["list", "stats"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTab(t)}
-                className={`h-9 rounded-xl px-4 text-sm font-semibold transition ${
-                  tab === t
-                    ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
-                }`}
-              >
-                {t === "list" ? (
-                  <span className="flex items-center gap-2"><Fish className="h-4 w-4" /> Записи</span>
-                ) : (
-                  <span className="flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Статистика</span>
-                )}
-              </button>
-            ))}
+        {/* ── Незареєстрований ── */}
+        {!user ? (
+          <div className="mt-8">
+            <AuthGate />
           </div>
-
-          <button
-            type="button"
-            onClick={() => { setEditTarget(undefined); setDialogOpen(true); }}
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Додати улов
-          </button>
-        </div>
-
-        {/* ── LIST TAB ── */}
-        {tab === "list" && (
-          <div className="mt-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              </div>
-            ) : catches.length === 0 ? (
-              <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
-                  <Fish className="h-8 w-8" />
-                </div>
-                <h2 className="mt-5 text-2xl font-black text-slate-900 dark:text-slate-100">
-                  Ще немає жодного запису
-                </h2>
-                <p className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-300">
-                  Зловіть першу рибу й занесіть результат до щоденника!
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setDialogOpen(true)}
-                  className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
-                >
-                  <Plus className="h-4 w-4" />
-                  Додати перший улов
-                </button>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {catches.map((record) => (
-                  <CatchCard
-                    key={record._id}
-                    record={record}
-                    onEdit={() => { setEditTarget(record); setDialogOpen(true); }}
-                    onDelete={() => setDeleteTarget(record._id)}
-                  />
+        ) : (
+          <>
+            {/* Tabs + Add button */}
+            <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 w-fit dark:border-slate-800 dark:bg-slate-900">
+                {(["list", "stats"] as const).map((t) => (
+                  <button
+                    key={t} type="button" onClick={() => setTab(t)}
+                    className={`h-9 rounded-xl px-4 text-sm font-semibold transition ${
+                      tab === t
+                        ? "bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
+                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
+                    }`}
+                  >
+                    {t === "list" ? (
+                      <span className="flex items-center gap-2"><Fish className="h-4 w-4" /> Записи</span>
+                    ) : (
+                      <span className="flex items-center gap-2"><BarChart3 className="h-4 w-4" /> Статистика</span>
+                    )}
+                  </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
 
-        {/* ── STATS TAB ── */}
-        {tab === "stats" && (
-          <div className="mt-6 space-y-6">
-            {/* Summary cards */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <BarChart3 className="mx-auto h-6 w-6 text-blue-500 mb-2" />
-                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Виходів</p>
-                <p className="mt-1 text-4xl font-black text-slate-900 dark:text-slate-100">{catches.length}</p>
-              </div>
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <Fish className="mx-auto h-6 w-6 text-emerald-500 mb-2" />
-                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Риб зловлено</p>
-                <p className="mt-1 text-4xl font-black text-slate-900 dark:text-slate-100">{totalFish}</p>
-              </div>
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <Trophy className="mx-auto h-6 w-6 text-amber-500 mb-2" />
-                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Найбільший трофей</p>
-                <p className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
-                  {biggestCatch ? `${biggestCatch.biggestFishWeight} кг` : "—"}
-                </p>
-                {biggestCatch && (
-                  <p className="mt-0.5 text-xs text-slate-400">{biggestCatch.biggestFishName}</p>
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={() => { setEditTarget(undefined); setDialogOpen(true); }}
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 shadow-sm"
+              >
+                <Plus className="h-4 w-4" /> Додати улов
+              </button>
             </div>
 
-            {/* Biggest catch card */}
-            {biggestCatch && (
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4">
-                  🏆 Найбільший улов
-                </h3>
-                <div className="flex items-start gap-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{biggestCatch.biggestFishName}</p>
-                    <p className="mt-1 text-sm text-slate-500">{biggestCatch.species} · {biggestCatch.waterbodyName}</p>
-                    <div className="mt-3 flex gap-4">
-                      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        <Scale className="h-4 w-4 text-amber-500" />
-                        {biggestCatch.biggestFishWeight} кг
-                      </div>
-                      <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        <CalendarDays className="h-4 w-4 text-slate-400" />
-                        {formatDate(biggestCatch.date)}
-                      </div>
-                    </div>
+            {/* LIST TAB */}
+            {tab === "list" && (
+              <div className="mt-6">
+                {loading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                   </div>
-                  {biggestCatch.photos.length > 0 && (
-                    <div className="shrink-0 w-28 h-28 rounded-2xl overflow-hidden relative bg-slate-100">
-                      <div
-                        className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60"
-                        style={{ backgroundImage: `url(${biggestCatch.photos[0].url})` }}
-                      />
-                      <img
-                        src={biggestCatch.photos[0].url}
-                        alt=""
-                        className="relative z-10 w-full h-full object-contain"
-                      />
+                ) : catches.length === 0 ? (
+                  <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-600/10 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300">
+                      <Fish className="h-8 w-8" />
                     </div>
-                  )}
-                </div>
-                {biggestCatch.waterbodyCoords && (
-                  <div className="mt-4">
-                    <MiniMap
-                      lat={biggestCatch.waterbodyCoords.lat}
-                      lng={biggestCatch.waterbodyCoords.lng}
-                      name={biggestCatch.waterbodyName}
-                    />
+                    <h2 className="mt-5 text-2xl font-black text-slate-900 dark:text-slate-100">
+                      Ще немає жодного запису
+                    </h2>
+                    <p className="mt-3 text-base leading-7 text-slate-600 dark:text-slate-300">
+                      Зловіть першу рибу й занесіть результат до щоденника!
+                    </p>
+                    <button
+                      type="button" onClick={() => setDialogOpen(true)}
+                      className="mt-6 inline-flex h-12 items-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4" /> Додати перший улов
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {catches.map((record) => (
+                      <CatchCard
+                        key={record._id} record={record}
+                        onEdit={() => { setEditTarget(record); setDialogOpen(true); }}
+                        onDelete={() => setDeleteTarget(record._id)}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Species stats */}
-            {topSpecies.length > 0 && (
-              <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4">
-                  За видами
-                </h3>
-                <div className="space-y-3">
-                  {topSpecies.map(([name, count], i) => {
-                    const pct = Math.round((count / totalFish) * 100);
-                    const colors = [
-                      "bg-blue-500", "bg-emerald-500", "bg-amber-500",
-                      "bg-rose-500", "bg-violet-500", "bg-sky-500",
-                    ];
-                    return (
-                      <div key={name}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{name}</span>
-                          <span className="text-sm text-slate-500">{count} шт · {pct}%</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${colors[i % colors.length]} transition-all`}
-                            style={{ width: `${pct}%` }}
-                          />
+            {/* STATS TAB */}
+            {tab === "stats" && (
+              <div className="mt-6 space-y-6">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <BarChart3 className="mx-auto h-6 w-6 text-blue-500 mb-2" />
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Виходів</p>
+                    <p className="mt-1 text-4xl font-black text-slate-900 dark:text-slate-100">{catches.length}</p>
+                  </div>
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <Fish className="mx-auto h-6 w-6 text-emerald-500 mb-2" />
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Риб зловлено</p>
+                    <p className="mt-1 text-4xl font-black text-slate-900 dark:text-slate-100">{totalFish}</p>
+                  </div>
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <Trophy className="mx-auto h-6 w-6 text-amber-500 mb-2" />
+                    <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Найбільший трофей</p>
+                    <p className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">
+                      {biggestCatch ? `${biggestCatch.biggestFishWeight} кг` : "—"}
+                    </p>
+                    {biggestCatch && <p className="mt-0.5 text-xs text-slate-400">{biggestCatch.biggestFishName}</p>}
+                  </div>
+                </div>
+
+                {biggestCatch && (
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4">🏆 Найбільший улов</h3>
+                    <div className="flex items-start gap-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{biggestCatch.biggestFishName}</p>
+                        <p className="mt-1 text-sm text-slate-500">{biggestCatch.species} · {biggestCatch.waterbodyName}</p>
+                        <div className="mt-3 flex gap-4">
+                          <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <Scale className="h-4 w-4 text-amber-500" /> {biggestCatch.biggestFishWeight} кг
+                          </div>
+                          <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <CalendarDays className="h-4 w-4 text-slate-400" /> {formatDate(biggestCatch.date)}
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                      {biggestCatch.photos.length > 0 && (
+                        <div className="shrink-0 w-28 h-28 rounded-2xl overflow-hidden relative bg-slate-100">
+                          <div className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60" style={{ backgroundImage: `url(${biggestCatch.photos[0].url})` }} />
+                          <img src={biggestCatch.photos[0].url} alt="" className="relative z-10 w-full h-full object-contain" />
+                        </div>
+                      )}
+                    </div>
+                    {biggestCatch.waterbodyCoords && (
+                      <div className="mt-4">
+                        <MiniMap lat={biggestCatch.waterbodyCoords.lat} lng={biggestCatch.waterbodyCoords.lng} name={biggestCatch.waterbodyName} />
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            {catches.length === 0 && (
-              <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
-                <p className="text-slate-500">Додайте перший запис, щоб бачити статистику</p>
+                {topSpecies.length > 0 && (
+                  <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-4">За видами</h3>
+                    <div className="space-y-3">
+                      {topSpecies.map(([name, count], i) => {
+                        const pct = Math.round((count / totalFish) * 100);
+                        const colors = ["bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-violet-500", "bg-sky-500"];
+                        return (
+                          <div key={name}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{name}</span>
+                              <span className="text-sm text-slate-500">{count} шт · {pct}%</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                              <div className={`h-full rounded-full ${colors[i % colors.length]} transition-all`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {catches.length === 0 && (
+                  <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900">
+                    <p className="text-slate-500">Додайте перший запис, щоб бачити статистику</p>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </main>
     </>
