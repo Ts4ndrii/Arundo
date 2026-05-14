@@ -24,7 +24,10 @@ import { Header, type HeaderUser } from "@/components/Header";
 import { getUiCopy, type LanguageCode } from "@/lib/ui-copy";
 import { languageCookieName } from "@/lib/site-language";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// ─── Єдиний ключ токена для всього застосунку ─────────────────
+export const TOKEN_KEY = "arundo_token";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type AuthTab = "login" | "register";
 type ThemeMode = "light" | "dark";
@@ -76,11 +79,6 @@ type AppUIContextValue = {
 
 const AppUIContext = createContext<AppUIContextValue | null>(null);
 
-const demoUser: HeaderUser = {
-  name: "ARUNDO Guest",
-  email: "guest@arundo.local",
-};
-
 const defaultSettings: AppSettings = {
   theme: "light",
   language: "uk",
@@ -90,38 +88,45 @@ const defaultSettings: AppSettings = {
 const catchesStorageKey = "arundo-catches";
 
 function createCatchId() {
-  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return (
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
 }
 
 function normalizeCatchRecords(storedValue: unknown): CatchRecord[] {
-  if (!Array.isArray(storedValue)) {
-    return [];
-  }
-
+  if (!Array.isArray(storedValue)) return [];
   return storedValue.flatMap((item, index) => {
-    if (!item || typeof item !== "object") {
-      return [];
-    }
-
+    if (!item || typeof item !== "object") return [];
     const candidate = item as Partial<CatchRecord>;
     const fishCount = Number(candidate.fishCount);
     const biggestFishWeight = Number(candidate.biggestFishWeight);
-
-    if (typeof candidate.date !== "string" || typeof candidate.place !== "string" || typeof candidate.species !== "string" || !Number.isFinite(fishCount) || fishCount <= 0) {
+    if (
+      typeof candidate.date !== "string" ||
+      typeof candidate.place !== "string" ||
+      typeof candidate.species !== "string" ||
+      !Number.isFinite(fishCount) ||
+      fishCount <= 0
+    )
       return [];
-    }
-
-    const normalizedBiggestWeight = Number.isFinite(biggestFishWeight) && biggestFishWeight >= 0 ? biggestFishWeight : 0;
-
     return [
       {
-        id: typeof candidate.id === "string" && candidate.id.trim().length > 0 ? candidate.id : `${Date.now()}-${index}`,
+        id:
+          typeof candidate.id === "string" && candidate.id.trim().length > 0
+            ? candidate.id
+            : `${Date.now()}-${index}`,
         date: candidate.date,
         place: candidate.place,
         species: candidate.species,
         fishCount: Math.max(1, Math.round(fishCount)),
-        biggestFishName: typeof candidate.biggestFishName === "string" ? candidate.biggestFishName : "",
-        biggestFishWeight: normalizedBiggestWeight,
+        biggestFishName:
+          typeof candidate.biggestFishName === "string"
+            ? candidate.biggestFishName
+            : "",
+        biggestFishWeight:
+          Number.isFinite(biggestFishWeight) && biggestFishWeight >= 0
+            ? biggestFishWeight
+            : 0,
       },
     ];
   });
@@ -138,41 +143,54 @@ const languageOptions: Array<{
   { code: "pl", label: "Polish", nativeLabel: "Polski", region: "Polska" },
 ];
 
-const themeOptions: Array<{
-  value: ThemeMode;
-  icon: typeof SunMedium;
-}> = [
+const themeOptions: Array<{ value: ThemeMode; icon: typeof SunMedium }> = [
   { value: "light", icon: SunMedium },
   { value: "dark", icon: MoonStar },
 ];
 
 export function useAppUI() {
   const context = useContext(AppUIContext);
-  if (!context) {
-    throw new Error("useAppUI must be used within AppShell");
-  }
+  if (!context) throw new Error("useAppUI must be used within AppShell");
   return context;
 }
 
 // ============================================================
 //  MODAL SHELL
 // ============================================================
-function ModalShell({ open, onClose, className, children }: { open: boolean; onClose: () => void; className: string; children: ReactNode }) {
+function ModalShell({
+  open,
+  onClose,
+  className,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  className: string;
+  children: ReactNode;
+}) {
   useEffect(() => {
     if (!open) return;
-    const previousOverflow = document.body.style.overflow;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handleKeyDown);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-[22px]" onMouseDown={onClose}>
-      <div className={className} onMouseDown={(event) => event.stopPropagation()}>{children}</div>
+    <div
+      className="fixed inset-0 z-[1300] flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-[22px]"
+      onMouseDown={onClose}
+    >
+      <div className={className} onMouseDown={(e) => e.stopPropagation()}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -196,26 +214,46 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-function deriveDisplayName(email: string) {
-  const rawName = email.split("@")[0]?.trim() ?? "";
-  if (!rawName) return demoUser.name;
-  return rawName.split(/[._-]+/).filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
-}
-
 // ============================================================
 //  PASSWORD FIELD
 // ============================================================
-function PasswordField({ label, value, onChange, placeholder, visible, onToggle, autoComplete, toggleLabel }: {
-  label: string; value: string; onChange: (value: string) => void; placeholder: string; visible: boolean; onToggle: () => void; autoComplete: string; toggleLabel: string;
+function PasswordField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  visible,
+  onToggle,
+  autoComplete,
+  toggleLabel,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  visible: boolean;
+  onToggle: () => void;
+  autoComplete: string;
+  toggleLabel: string;
 }) {
   return (
     <FieldShell label={label}>
       <div className="relative">
         <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input type={visible ? "text" : "password"} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} autoComplete={autoComplete}
-          className="h-11 w-full rounded-full border border-slate-200 bg-white pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
-        <button type="button" onClick={onToggle} aria-label={toggleLabel}
-          className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200">
+        <input
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className="h-11 w-full rounded-full border border-slate-200 bg-white pl-11 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={toggleLabel}
+          className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
@@ -243,7 +281,6 @@ function AuthModal({
   open,
   tab,
   onTabChange,
-  currentUser,
   onClose,
   onComplete,
   copy,
@@ -294,8 +331,8 @@ function AuthModal({
     }
   }, [open]);
 
-  const handleLoginSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleLoginSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const trimmedEmail = loginEmail.trim();
     if (!isValidEmail(trimmedEmail)) {
       setLoginError(copy.auth.invalidEmail);
@@ -309,34 +346,36 @@ function AuthModal({
     setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: trimmedEmail, password: loginPassword })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail, password: loginPassword }),
       });
       const data = await res.json();
       if (data.token && data.user) {
-        localStorage.setItem('adminToken', data.token);
+        // ── Зберігаємо токен під єдиним ключем ──────────────
+        localStorage.setItem(TOKEN_KEY, data.token);
+        // Видаляємо старий ключ якщо був
+        localStorage.removeItem("adminToken");
         onComplete({
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,
           avatarUrl: data.user.avatarUrl,
-          favoriteWaters: data.user.favoriteWaters || []
+          favoriteWaters: data.user.favoriteWaters || [],
         });
         onClose();
       } else {
-        setLoginError(data.error || 'Помилка входу');
+        setLoginError(data.error || "Помилка входу");
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setLoginError('Помилка підключення до сервера');
+    } catch {
+      setLoginError("Помилка підключення до сервера");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRegisterSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const trimmedName = registerName.trim();
     const trimmedEmail = registerEmail.trim();
     if (!trimmedName) {
@@ -359,47 +398,83 @@ function AuthModal({
     setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password: registerPassword })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          email: trimmedEmail,
+          password: registerPassword,
+        }),
       });
       const data = await res.json();
       if (data.token && data.user) {
-        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem(TOKEN_KEY, data.token);
+        localStorage.removeItem("adminToken");
         onComplete({
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,
           avatarUrl: data.user.avatarUrl,
-          favoriteWaters: data.user.favoriteWaters || []
+          favoriteWaters: data.user.favoriteWaters || [],
         });
         onClose();
       } else {
-        setRegisterError(data.error || 'Помилка реєстрації');
+        setRegisterError(data.error || "Помилка реєстрації");
       }
-    } catch (error) {
-      console.error('Register error:', error);
-      setRegisterError('Помилка підключення до сервера');
+    } catch {
+      setRegisterError("Помилка підключення до сервера");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <ModalShell open={open} onClose={onClose} className="relative w-full max-w-[448px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_36px_72px_-28px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-900">
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      className="relative w-full max-w-[448px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_36px_72px_-28px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-900"
+    >
       <div className="relative max-h-[calc(100vh-2.5rem)] overflow-y-auto p-5 pr-3 sm:p-7 modal-scrollbar">
-        <button type="button" aria-label={modalCopy.closeAuth} onClick={onClose} className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+        <button
+          type="button"
+          aria-label={modalCopy.closeAuth}
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+        >
           <X className="h-4 w-4" />
         </button>
         <div className="flex flex-col items-center text-center">
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
-            <Image src={headerLogo} alt={copy.header.logoAlt} width={44} height={44} priority className="h-9 w-9 object-contain dark:invert dark:brightness-200" />
+            <Image
+              src={headerLogo}
+              alt={copy.header.logoAlt}
+              width={44}
+              height={44}
+              priority
+              className="h-9 w-9 object-contain dark:invert dark:brightness-200"
+            />
           </div>
           <div className="mt-5 grid w-full grid-cols-2 gap-3 border-b border-slate-200 pb-2">
-            <button type="button" onClick={() => onTabChange("login")} className={`relative pb-3.5 text-sm font-bold transition sm:text-base ${isLogin ? "text-blue-600 after:scale-x-100" : "text-slate-400 after:scale-x-0"} after:absolute after:inset-x-0 after:bottom-[-1px] after:h-1 after:rounded-full after:bg-blue-600 after:transition-transform`}>
+            <button
+              type="button"
+              onClick={() => onTabChange("login")}
+              className={`relative pb-3.5 text-sm font-bold transition sm:text-base ${
+                isLogin
+                  ? "text-blue-600 after:scale-x-100"
+                  : "text-slate-400 after:scale-x-0"
+              } after:absolute after:inset-x-0 after:bottom-[-1px] after:h-1 after:rounded-full after:bg-blue-600 after:transition-transform`}
+            >
               {copy.auth.loginTab}
             </button>
-            <button type="button" onClick={() => onTabChange("register")} className={`relative pb-3.5 text-sm font-bold transition sm:text-base ${!isLogin ? "text-blue-600 after:scale-x-100" : "text-slate-400 after:scale-x-0"} after:absolute after:inset-x-0 after:bottom-[-1px] after:h-1 after:rounded-full after:bg-blue-600 after:transition-transform`}>
+            <button
+              type="button"
+              onClick={() => onTabChange("register")}
+              className={`relative pb-3.5 text-sm font-bold transition sm:text-base ${
+                !isLogin
+                  ? "text-blue-600 after:scale-x-100"
+                  : "text-slate-400 after:scale-x-0"
+              } after:absolute after:inset-x-0 after:bottom-[-1px] after:h-1 after:rounded-full after:bg-blue-600 after:transition-transform`}
+            >
               {copy.auth.registerTab}
             </button>
           </div>
@@ -414,19 +489,55 @@ function AuthModal({
             <FieldShell label={copy.auth.emailLabel}>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input type="text" inputMode="email" autoComplete="email" value={loginEmail} onChange={(event) => { setLoginEmail(event.target.value); if (loginError) setLoginError(null); }} placeholder={copy.auth.emailPlaceholder}
-                  className="h-11 w-full rounded-full border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+                <input
+                  type="text"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={loginEmail}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    if (loginError) setLoginError(null);
+                  }}
+                  placeholder={copy.auth.emailPlaceholder}
+                  className="h-11 w-full rounded-full border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                />
               </div>
             </FieldShell>
-            <PasswordField label={copy.auth.passwordLabel} value={loginPassword} onChange={(value) => { setLoginPassword(value); if (loginError) setLoginError(null); }}
-              placeholder={copy.auth.passwordPlaceholder} visible={loginPasswordVisible} onToggle={() => setLoginPasswordVisible((s) => !s)} autoComplete="current-password"
-              toggleLabel={loginPasswordVisible ? copy.auth.hidePassword : copy.auth.showPassword} />
-            <button type="submit" disabled={isLoading} className="flex h-11 w-full items-center justify-center rounded-full bg-blue-600 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-blue-600/20">
-              {isLoading ? 'Вхід...' : copy.auth.loginSubmit}
+            <PasswordField
+              label={copy.auth.passwordLabel}
+              value={loginPassword}
+              onChange={(v) => {
+                setLoginPassword(v);
+                if (loginError) setLoginError(null);
+              }}
+              placeholder={copy.auth.passwordPlaceholder}
+              visible={loginPasswordVisible}
+              onToggle={() => setLoginPasswordVisible((s) => !s)}
+              autoComplete="current-password"
+              toggleLabel={
+                loginPasswordVisible ? copy.auth.hidePassword : copy.auth.showPassword
+              }
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex h-11 w-full items-center justify-center rounded-full bg-blue-600 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-blue-600/20"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Вхід...
+                </span>
+              ) : (
+                copy.auth.loginSubmit
+              )}
             </button>
             <p className="text-center text-sm text-slate-500">
               {copy.auth.noAccount}{" "}
-              <button type="button" onClick={() => onTabChange("register")} className="font-semibold text-blue-600 hover:underline">
+              <button
+                type="button"
+                onClick={() => onTabChange("register")}
+                className="font-semibold text-blue-600 hover:underline"
+              >
                 {copy.auth.registerTab}
               </button>
             </p>
@@ -438,28 +549,89 @@ function AuthModal({
             </h2>
             <ValidationNotice message={registerError} />
             <FieldShell label={copy.auth.nameLabel}>
-              <input type="text" autoComplete="name" value={registerName} onChange={(event) => { setRegisterName(event.target.value); if (registerError) setRegisterError(null); }}
-                placeholder={copy.auth.namePlaceholder} className="h-11 w-full rounded-full border border-slate-200 bg-white px-5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+              <input
+                type="text"
+                autoComplete="name"
+                value={registerName}
+                onChange={(e) => {
+                  setRegisterName(e.target.value);
+                  if (registerError) setRegisterError(null);
+                }}
+                placeholder={copy.auth.namePlaceholder}
+                className="h-11 w-full rounded-full border border-slate-200 bg-white px-5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
             </FieldShell>
             <FieldShell label={copy.auth.emailLabel}>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input type="text" inputMode="email" autoComplete="email" value={registerEmail} onChange={(event) => { setRegisterEmail(event.target.value); if (registerError) setRegisterError(null); }}
-                  placeholder={copy.auth.emailPlaceholder} className="h-11 w-full rounded-full border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+                <input
+                  type="text"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={registerEmail}
+                  onChange={(e) => {
+                    setRegisterEmail(e.target.value);
+                    if (registerError) setRegisterError(null);
+                  }}
+                  placeholder={copy.auth.emailPlaceholder}
+                  className="h-11 w-full rounded-full border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                />
               </div>
             </FieldShell>
-            <PasswordField label={copy.auth.passwordLabel} value={registerPassword} onChange={(value) => { setRegisterPassword(value); if (registerError) setRegisterError(null); }}
-              placeholder={copy.auth.passwordPlaceholder} visible={registerPasswordVisible} onToggle={() => setRegisterPasswordVisible((s) => !s)} autoComplete="new-password"
-              toggleLabel={registerPasswordVisible ? copy.auth.hidePassword : copy.auth.showPassword} />
-            <PasswordField label={copy.auth.confirmPasswordLabel} value={registerConfirmPassword} onChange={(value) => { setRegisterConfirmPassword(value); if (registerError) setRegisterError(null); }}
-              placeholder={copy.auth.passwordPlaceholder} visible={registerConfirmVisible} onToggle={() => setRegisterConfirmVisible((s) => !s)} autoComplete="new-password"
-              toggleLabel={registerConfirmVisible ? copy.auth.hidePassword : copy.auth.showPassword} />
-            <button type="submit" disabled={isLoading} className="flex h-11 w-full items-center justify-center rounded-full bg-blue-600 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-blue-600/20">
-              {isLoading ? 'Реєстрація...' : copy.auth.registerSubmit}
+            <PasswordField
+              label={copy.auth.passwordLabel}
+              value={registerPassword}
+              onChange={(v) => {
+                setRegisterPassword(v);
+                if (registerError) setRegisterError(null);
+              }}
+              placeholder={copy.auth.passwordPlaceholder}
+              visible={registerPasswordVisible}
+              onToggle={() => setRegisterPasswordVisible((s) => !s)}
+              autoComplete="new-password"
+              toggleLabel={
+                registerPasswordVisible
+                  ? copy.auth.hidePassword
+                  : copy.auth.showPassword
+              }
+            />
+            <PasswordField
+              label={copy.auth.confirmPasswordLabel}
+              value={registerConfirmPassword}
+              onChange={(v) => {
+                setRegisterConfirmPassword(v);
+                if (registerError) setRegisterError(null);
+              }}
+              placeholder={copy.auth.passwordPlaceholder}
+              visible={registerConfirmVisible}
+              onToggle={() => setRegisterConfirmVisible((s) => !s)}
+              autoComplete="new-password"
+              toggleLabel={
+                registerConfirmVisible
+                  ? copy.auth.hidePassword
+                  : copy.auth.showPassword
+              }
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex h-11 w-full items-center justify-center rounded-full bg-blue-600 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:shadow-blue-600/20"
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Реєстрація...
+                </span>
+              ) : (
+                copy.auth.registerSubmit
+              )}
             </button>
             <p className="text-center text-sm text-slate-500">
               {copy.auth.haveAccount}{" "}
-              <button type="button" onClick={() => onTabChange("login")} className="font-semibold text-blue-600 hover:underline">
+              <button
+                type="button"
+                onClick={() => onTabChange("login")}
+                className="font-semibold text-blue-600 hover:underline"
+              >
                 {copy.auth.loginTab}
               </button>
             </p>
@@ -490,48 +662,136 @@ function ProfileEditModal({
 }) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && user) {
-      const sourceName = user?.name ?? copy.profile.guestName;
-      const parts = sourceName.split(/\s+/).filter(Boolean);
+      const parts = (user.name ?? "").split(/\s+/).filter(Boolean);
       setFirstName(parts[0] ?? "");
       setLastName(parts.slice(1).join(" "));
+      setError(null);
     }
-  }, [open, user, copy.profile.guestName]);
+  }, [open, user]);
 
   if (!open) return null;
 
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const computedName = `${firstName.trim()} ${lastName.trim()}`.trim() || user?.name || "";
+    if (!computedName) {
+      setError("Ім'я не може бути порожнім");
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const res = await fetch(`${API_URL}/api/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: computedName }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onSave(data.user?.name ?? computedName, user?.email ?? "");
+        onClose();
+      } else {
+        setError(data.error ?? "Помилка збереження");
+      }
+    } catch {
+      setError("Помилка підключення до сервера");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
-    <ModalShell open={open} onClose={onClose} className="relative w-full max-w-[520px] rounded-[32px] border border-slate-200 bg-white px-6 py-7 shadow-[0_40px_80px_-24px_rgba(15,23,42,0.45)] sm:px-8 dark:border-slate-800 dark:bg-slate-900">
-      <button type="button" aria-label={modalCopy.closeProfileEdit} onClick={onClose} className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      className="relative w-full max-w-[520px] rounded-[32px] border border-slate-200 bg-white px-6 py-7 shadow-[0_40px_80px_-24px_rgba(15,23,42,0.45)] sm:px-8 dark:border-slate-800 dark:bg-slate-900"
+    >
+      <button
+        type="button"
+        aria-label={modalCopy.closeProfileEdit}
+        onClick={onClose}
+        className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+      >
         <X className="h-5 w-5" />
       </button>
-      <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">{modalCopy.profileEditTitle}</h2>
+      <h2 className="text-center text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+        {modalCopy.profileEditTitle}
+      </h2>
+
+      {/* Avatar */}
       <div className="mt-6 flex flex-col items-center gap-3 text-center">
-        <div className="relative h-28 w-28 overflow-hidden rounded-full ring-4 ring-slate-100">
-          <Image src={(user?.avatarUrl ?? demoUser.avatarUrl) as string} alt={modalCopy.profilePhotoAlt} fill sizes="112px" className="object-cover" />
+        <div className="relative h-28 w-28 overflow-hidden rounded-full ring-4 ring-slate-100 bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+          {user?.avatarUrl ? (
+            <Image
+              src={user.avatarUrl}
+              alt={modalCopy.profilePhotoAlt ?? "Аватар"}
+              fill
+              sizes="112px"
+              className="object-cover"
+            />
+          ) : (
+            <span className="text-3xl font-black text-slate-500 select-none">
+              {(user?.name ?? "?").charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
-        <button type="button" className="text-sm font-semibold text-blue-600 underline decoration-2 underline-offset-4">{modalCopy.changePhoto}</button>
       </div>
-      <form className="mt-6 space-y-4" onSubmit={(event) => { event.preventDefault(); const computedName = (`${firstName.trim()} ${lastName.trim()}`.trim() || user?.name || copy.profile.guestName); onSave(computedName, user?.email || ""); }}>
+
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        {error && <ValidationNotice message={error} />}
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-500">{modalCopy.firstName}</span>
+          <span className="mb-2 block text-sm font-medium text-slate-500">
+            {modalCopy.firstName}
+          </span>
           <div className="relative">
-            <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="h-14 w-full rounded-full border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+            <input
+              type="text"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="h-14 w-full rounded-full border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            />
             <PencilLine className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
         </label>
         <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-500">{modalCopy.lastName}</span>
+          <span className="mb-2 block text-sm font-medium text-slate-500">
+            {modalCopy.lastName}
+          </span>
           <div className="relative">
-            <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="h-14 w-full rounded-full border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="h-14 w-full rounded-full border border-slate-200 bg-white px-5 pr-12 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            />
             <PencilLine className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           </div>
         </label>
         <div className="grid gap-3 pt-2 sm:grid-cols-2">
-          <button type="submit" className="inline-flex h-14 items-center justify-center rounded-full bg-blue-600 px-6 text-base font-semibold text-white transition hover:bg-blue-700">{modalCopy.saveChanges}</button>
-          <button type="button" onClick={onClose} className="inline-flex h-14 items-center justify-center rounded-full border border-blue-500 bg-white px-6 text-base font-semibold text-blue-600 transition hover:bg-blue-50 dark:border-blue-400 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800">{modalCopy.cancel}</button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-blue-600 px-6 text-base font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          >
+            {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {modalCopy.saveChanges}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-14 items-center justify-center rounded-full border border-blue-500 bg-white px-6 text-base font-semibold text-blue-600 transition hover:bg-blue-50 dark:border-blue-400 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
+          >
+            {modalCopy.cancel}
+          </button>
         </div>
       </form>
     </ModalShell>
@@ -541,15 +801,30 @@ function ProfileEditModal({
 // ============================================================
 //  SUPPORT MODAL
 // ============================================================
-function SupportModal({ open, onClose, user, copy }: { open: boolean; onClose: () => void; user: HeaderUser | null; copy: ReturnType<typeof getUiCopy> }) {
-  const [formData, setFormData] = useState({ name: user?.name ?? "", email: user?.email ?? "", reason: "", message: "" });
+function SupportModal({
+  open,
+  onClose,
+  user,
+  copy,
+}: {
+  open: boolean;
+  onClose: () => void;
+  user: HeaderUser | null;
+  copy: ReturnType<typeof getUiCopy>;
+}) {
+  const [formData, setFormData] = useState({
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+    reason: "",
+    message: "",
+  });
   const [messageHeight, setMessageHeight] = useState<string>("auto");
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const textarea = e.target;
-    setFormData((prev) => ({ ...prev, message: textarea.value }));
-    textarea.style.height = "auto";
-    setMessageHeight(textarea.scrollHeight + "px");
+    const ta = e.target;
+    setFormData((prev) => ({ ...prev, message: ta.value }));
+    ta.style.height = "auto";
+    setMessageHeight(ta.scrollHeight + "px");
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -557,53 +832,99 @@ function SupportModal({ open, onClose, user, copy }: { open: boolean; onClose: (
     try {
       const key = "arundo.support.requests";
       const existing = JSON.parse(localStorage.getItem(key) || "[]");
-      const entry = { id: Date.now(), createdAt: new Date().toISOString(), data: formData, status: "local" };
-      existing.push(entry);
+      existing.push({
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+        data: formData,
+        status: "local",
+      });
       localStorage.setItem(key, JSON.stringify(existing));
-      console.log("Support request saved locally:", entry);
-    } catch (err) { console.error("Failed to save support request locally", err); }
+    } catch {}
     setFormData({ name: user?.name ?? "", email: user?.email ?? "", reason: "", message: "" });
     setMessageHeight("auto");
     onClose();
   };
 
   const supportCopy = copy.support;
-  const handleClose = () => {
-    setFormData({ name: user?.name ?? "", email: user?.email ?? "", reason: "", message: "" });
-    setMessageHeight("auto");
-    onClose();
-  };
 
   return (
-    <ModalShell open={open} onClose={handleClose} className="relative w-full max-w-[680px] overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_40px_100px_-30px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-900">
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      className="relative w-full max-w-[680px] overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_40px_100px_-30px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-900"
+    >
       <div className="relative max-h-[calc(100vh-2rem)] overflow-y-auto p-5 pr-3 sm:p-7 modal-scrollbar">
-        <button type="button" aria-label={supportCopy.close} onClick={handleClose} className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+        <button
+          type="button"
+          aria-label={supportCopy.close}
+          onClick={onClose}
+          className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+        >
           <X className="h-5 w-5" />
         </button>
         <div className="mx-auto flex max-w-xl flex-col items-center text-center">
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400">
             <Mail className="h-5 w-5" />
           </span>
-          <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">{supportCopy.title}</h2>
+          <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+            {supportCopy.title}
+          </h2>
         </div>
         <form onSubmit={handleSubmit} className="mt-7 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">{supportCopy.name}</label>
-            <input type="text" value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} placeholder={supportCopy.namePlaceholder} className="mt-2 h-11 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">
+              {supportCopy.name}
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+              placeholder={supportCopy.namePlaceholder}
+              className="mt-2 h-11 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">{supportCopy.email}</label>
-            <input type="email" value={formData.email} onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))} placeholder={copy.auth.emailPlaceholder} className="mt-2 h-11 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">
+              {supportCopy.email}
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
+              placeholder={copy.auth.emailPlaceholder}
+              className="mt-2 h-11 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">{supportCopy.reason}</label>
-            <input type="text" value={formData.reason} onChange={(e) => setFormData((prev) => ({ ...prev, reason: e.target.value }))} placeholder={supportCopy.reasonPlaceholder} className="mt-2 h-11 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">
+              {supportCopy.reason}
+            </label>
+            <input
+              type="text"
+              value={formData.reason}
+              onChange={(e) => setFormData((p) => ({ ...p, reason: e.target.value }))}
+              placeholder={supportCopy.reasonPlaceholder}
+              className="mt-2 h-11 w-full rounded-full border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">{supportCopy.message}</label>
-            <textarea value={formData.message} onChange={handleMessageChange} placeholder={supportCopy.messagePlaceholder} style={{ height: messageHeight }} className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+            <label className="block text-sm font-medium text-slate-600 dark:text-slate-400">
+              {supportCopy.message}
+            </label>
+            <textarea
+              value={formData.message}
+              onChange={handleMessageChange}
+              placeholder={supportCopy.messagePlaceholder}
+              style={{ height: messageHeight }}
+              className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            />
           </div>
-          <button type="submit" className="w-full h-12 rounded-full bg-blue-600 text-sm font-semibold text-white transition hover:bg-blue-700 dark:hover:bg-blue-800">{supportCopy.send}</button>
+          <button
+            type="submit"
+            className="w-full h-12 rounded-full bg-blue-600 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            {supportCopy.send}
+          </button>
         </form>
       </div>
     </ModalShell>
@@ -613,77 +934,208 @@ function SupportModal({ open, onClose, user, copy }: { open: boolean; onClose: (
 // ============================================================
 //  SETTINGS MODAL
 // ============================================================
-function SettingsModal({ open, settings, onThemeChange, onLanguageChange, copy, onNotificationsChange, onClose, modalCopy }: {
-  open: boolean; settings: AppSettings; onThemeChange: (theme: ThemeMode) => void; onLanguageChange: (language: LanguageCode) => void;
-  copy: ReturnType<typeof getUiCopy>; onNotificationsChange: (value: boolean) => void; onClose: () => void; modalCopy: { closeSettings: string };
+function SettingsModal({
+  open,
+  settings,
+  onThemeChange,
+  onLanguageChange,
+  copy,
+  onNotificationsChange,
+  onClose,
+  modalCopy,
+}: {
+  open: boolean;
+  settings: AppSettings;
+  onThemeChange: (theme: ThemeMode) => void;
+  onLanguageChange: (language: LanguageCode) => void;
+  copy: ReturnType<typeof getUiCopy>;
+  onNotificationsChange: (value: boolean) => void;
+  onClose: () => void;
+  modalCopy: { closeSettings: string };
 }) {
-  const selectedTheme = themeOptions.find((o) => o.value === settings.theme) ?? themeOptions[0];
-  const selectedLanguage = languageOptions.find((o) => o.code === settings.language) ?? languageOptions[0];
+  const selectedTheme =
+    themeOptions.find((o) => o.value === settings.theme) ?? themeOptions[0];
+  const selectedLanguage =
+    languageOptions.find((o) => o.code === settings.language) ?? languageOptions[0];
 
   return (
-    <ModalShell open={open} onClose={onClose} className="relative w-full max-w-[680px] overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_40px_100px_-30px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-900">
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      className="relative w-full max-w-[680px] overflow-hidden rounded-[34px] border border-slate-200 bg-white shadow-[0_40px_100px_-30px_rgba(15,23,42,0.45)] dark:border-slate-800 dark:bg-slate-900"
+    >
       <div className="relative max-h-[calc(100vh-2rem)] overflow-y-auto p-5 pr-3 sm:p-7 modal-scrollbar">
-        <button type="button" aria-label={modalCopy.closeSettings} onClick={onClose} className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800">
+        <button
+          type="button"
+          aria-label={modalCopy.closeSettings}
+          onClick={onClose}
+          className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+        >
           <X className="h-5 w-5" />
         </button>
         <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-          <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">{copy.settings.badge}</span>
-          <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">{copy.settings.title}</h2>
+          <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+            {copy.settings.badge}
+          </span>
+          <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+            {copy.settings.title}
+          </h2>
         </div>
         <div className="mt-7 space-y-4">
+          {/* Theme */}
           <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
             <div className="flex items-center gap-4">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800"><MoonStar className="h-5 w-5" /></span>
-              <div><p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">{copy.settings.themeTitle}</p><h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">{copy.settings.themeCardTitle}</h3></div>
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800">
+                <MoonStar className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
+                  {copy.settings.themeTitle}
+                </p>
+                <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {copy.settings.themeCardTitle}
+                </h3>
+              </div>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {themeOptions.map((option) => {
                 const Icon = option.icon;
                 const isActive = selectedTheme.value === option.value;
                 return (
-                  <button key={option.value} type="button" onClick={() => onThemeChange(option.value)} className={`group rounded-[24px] border p-4 text-left transition ${isActive ? "border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500/40"}`}>
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${isActive ? "bg-white/15 text-white" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100"}`}><Icon className="h-5 w-5" /></div>
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => onThemeChange(option.value)}
+                    className={`group rounded-[24px] border p-4 text-left transition ${
+                      isActive
+                        ? "border-blue-500 bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500/40"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+                        isActive
+                          ? "bg-white/15 text-white"
+                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
                     <div className="mt-4 flex items-start justify-between gap-3">
-                      <div><p className="text-base font-bold">{option.value === "light" ? copy.settings.lightThemeLabel : copy.settings.darkThemeLabel}</p></div>
-                      {isActive && <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">{copy.settings.selected}</span>}
+                      <p className="text-base font-bold">
+                        {option.value === "light"
+                          ? copy.settings.lightThemeLabel
+                          : copy.settings.darkThemeLabel}
+                      </p>
+                      {isActive && (
+                        <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
+                          {copy.settings.selected}
+                        </span>
+                      )}
                     </div>
                   </button>
                 );
               })}
             </div>
           </section>
+
+          {/* Language */}
           <section className="rounded-[28px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center gap-4">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100"><Globe className="h-5 w-5" /></span>
-              <div className="min-w-0 flex-1"><p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">{copy.settings.languageTitle}</p><h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">{copy.settings.languageCardTitle}</h3></div>
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                <Globe className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
+                  {copy.settings.languageTitle}
+                </p>
+                <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {copy.settings.languageCardTitle}
+                </h3>
+              </div>
             </div>
             <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950/60">
               <div className="max-h-56 space-y-2 overflow-y-auto pr-1 modal-scrollbar">
                 {languageOptions.map((option) => {
                   const isActive = selectedLanguage.code === option.code;
                   return (
-                    <button key={option.code} type="button" onClick={() => onLanguageChange(option.code)} className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${isActive ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"}`}>
-                      <span className="min-w-0 flex-1 pr-3"><span className="block text-sm font-semibold">{option.nativeLabel}</span></span>
-                      {isActive ? <Check className="h-4 w-4 shrink-0" /> : <span className="h-4 w-4 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" />}
+                    <button
+                      key={option.code}
+                      type="button"
+                      onClick={() => onLanguageChange(option.code)}
+                      className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${
+                        isActive
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                          : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span className="min-w-0 flex-1 pr-3">
+                        <span className="block text-sm font-semibold">
+                          {option.nativeLabel}
+                        </span>
+                      </span>
+                      {isActive ? (
+                        <Check className="h-4 w-4 shrink-0" />
+                      ) : (
+                        <span className="h-4 w-4 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" />
+                      )}
                     </button>
                   );
                 })}
               </div>
             </div>
           </section>
+
+          {/* Notifications */}
           <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
             <div className="flex items-center gap-4">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800"><Bell className="h-5 w-5" /></span>
-              <div className="min-w-0 flex-1"><p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">{copy.settings.notificationsTitle}</p><h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">{copy.settings.notificationsCardTitle}</h3></div>
-              <button type="button" role="switch" aria-checked={settings.notificationsEnabled} onClick={() => onNotificationsChange(!settings.notificationsEnabled)} className={`relative inline-flex h-8 w-14 items-center rounded-full border p-1 transition ${settings.notificationsEnabled ? "border-blue-500 bg-blue-500/10" : "border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"}`}>
-                <span className={`h-6 w-6 rounded-full bg-white shadow transition-transform ${settings.notificationsEnabled ? "translate-x-6" : "translate-x-0"}`} />
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800">
+                <Bell className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
+                  {copy.settings.notificationsTitle}
+                </p>
+                <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {copy.settings.notificationsCardTitle}
+                </h3>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings.notificationsEnabled}
+                onClick={() => onNotificationsChange(!settings.notificationsEnabled)}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full border p-1 transition ${
+                  settings.notificationsEnabled
+                    ? "border-blue-500 bg-blue-500/10"
+                    : "border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+                }`}
+              >
+                <span
+                  className={`h-6 w-6 rounded-full bg-white shadow transition-transform ${
+                    settings.notificationsEnabled ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
               </button>
             </div>
           </section>
         </div>
+
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <button type="button" onClick={onClose} className="inline-flex h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">{copy.settings.close}</button>
-          <button type="button" onClick={onClose} className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700">{copy.settings.save}</button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {copy.settings.close}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-6 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700"
+          >
+            {copy.settings.save}
+          </button>
         </div>
       </div>
     </ModalShell>
@@ -693,14 +1145,26 @@ function SettingsModal({ open, settings, onThemeChange, onLanguageChange, copy, 
 // ============================================================
 //  TOAST
 // ============================================================
-function Toast({ message, type, onClose }: { message: string; type: "success" | "error"; onClose: () => void }) {
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error";
+  onClose: () => void;
+}) {
   useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(onClose, 3000);
+    return () => clearTimeout(t);
   }, [onClose]);
   return (
     <div className="fixed bottom-4 right-4 z-[9999] animate-in slide-in-from-bottom-2 duration-300">
-      <div className={`rounded-lg px-4 py-3 shadow-lg ${type === "error" ? "bg-red-500 text-white" : "bg-green-500 text-white"}`}>
+      <div
+        className={`rounded-lg px-4 py-3 shadow-lg ${
+          type === "error" ? "bg-red-500 text-white" : "bg-green-500 text-white"
+        }`}
+      >
         {message}
       </div>
     </div>
@@ -721,105 +1185,107 @@ function AppShell({ children }: { children: ReactNode }) {
   const [catches, setCatches] = useState<CatchRecord[]>([]);
   const [catchesLoaded, setCatchesLoaded] = useState(false);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
   const copy = getUiCopy(settings.language);
   const modalCopy = copy.modal;
 
-  const showToast = (message: string, type: "success" | "error" = "success") => {
-    setToast({ message, type });
-  };
-
-  // ── Завантаження користувача з БД (ГОЛОВНЕ ДЖЕРЕЛО) ───────────
+  // ── Міграція старого ключа токена ────────────────────────────
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const oldToken = localStorage.getItem("adminToken");
+    if (oldToken && !localStorage.getItem(TOKEN_KEY)) {
+      localStorage.setItem(TOKEN_KEY, oldToken);
+    }
+    if (oldToken) localStorage.removeItem("adminToken");
+  }, []);
+
+  // ── Завантаження користувача ──────────────────────────────────
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
       setIsLoadingUser(false);
       return;
     }
-
-    const fetchUserFromDB = async () => {
+    const fetchUser = async () => {
       try {
         const res = await fetch(`${API_URL}/api/auth/me`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           const userData = await res.json();
-          const fixedUser = {
+          const fixedUser: HeaderUser = {
             id: userData.id,
             name: userData.name,
             email: userData.email,
             role: userData.role,
             avatarUrl: userData.avatarUrl || null,
-            favoriteWaters: userData.favoriteWaters || []
+            favoriteWaters: userData.favoriteWaters || [],
           };
           setUser(fixedUser);
           setFavoriteWaterIds(fixedUser.favoriteWaters || []);
           localStorage.setItem("arundo-user", JSON.stringify(fixedUser));
         } else {
-          localStorage.removeItem('adminToken');
+          // Токен невалідний — чистимо
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem("arundo-user");
         }
-      } catch (error) {
-        console.error('Помилка завантаження користувача:', error);
+      } catch {
+        // Сервер недоступний — намагаємось із кешу
+        const stored = localStorage.getItem("arundo-user");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            setUser(parsed);
+            setFavoriteWaterIds(parsed.favoriteWaters || []);
+          } catch {}
+        }
       } finally {
         setIsLoadingUser(false);
       }
     };
-
-    fetchUserFromDB();
+    fetchUser();
   }, []);
 
-  // ── Завантаження з localStorage тільки якщо БД не відповіла ───
+  // ── Синхронізація улюблених з БД ─────────────────────────────
   useEffect(() => {
-    if (user) return;
-    const storedUser = localStorage.getItem("arundo-user");
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        setUser(parsed);
-        setFavoriteWaterIds(parsed.favoriteWaters || []);
-      } catch (_) {}
-    }
-  }, [user]);
-
-  // ── Синхронізація улюблених з БД при зміні ───────────────────
-  useEffect(() => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem(TOKEN_KEY);
     if (!token || !user) return;
-
     const syncFavorites = async () => {
       try {
         await fetch(`${API_URL}/api/users/favorites`, {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ favorites: favoriteWaterIds })
+          body: JSON.stringify({ favorites: favoriteWaterIds }),
         });
-      } catch (error) {
-        console.error('Помилка синхронізації улюблених:', error);
-      }
+      } catch {}
     };
     syncFavorites();
   }, [favoriteWaterIds, user]);
 
-  // ── Завантаження налаштувань ──────────────────────────────────
+  // ── Налаштування ──────────────────────────────────────────────
   useEffect(() => {
     try {
-      const storedSettings = localStorage.getItem("arundo-settings");
-      if (storedSettings) {
-        const parsedSettings = JSON.parse(storedSettings);
+      const stored = localStorage.getItem("arundo-settings");
+      if (stored) {
+        const parsed = JSON.parse(stored);
         setSettings({
-          theme: parsedSettings.theme === "dark" ? "dark" : defaultSettings.theme,
-          language: languageOptions.some((o) => o.code === parsedSettings.language)
-            ? parsedSettings.language
+          theme: parsed.theme === "dark" ? "dark" : defaultSettings.theme,
+          language: languageOptions.some((o) => o.code === parsed.language)
+            ? parsed.language
             : defaultSettings.language,
-          notificationsEnabled: typeof parsedSettings.notificationsEnabled === "boolean"
-            ? parsedSettings.notificationsEnabled
-            : defaultSettings.notificationsEnabled,
+          notificationsEnabled:
+            typeof parsed.notificationsEnabled === "boolean"
+              ? parsed.notificationsEnabled
+              : defaultSettings.notificationsEnabled,
         });
       }
-    } catch (_) {}
+    } catch {}
     setSettingsLoaded(true);
   }, []);
 
@@ -832,14 +1298,12 @@ function AppShell({ children }: { children: ReactNode }) {
     document.documentElement.lang = settings.language;
   }, [settings, settingsLoaded]);
 
-  // ── Завантаження уловів ──────────────────────────────────────
+  // ── Улови (localStorage — для зворотньої сумісності) ─────────
   useEffect(() => {
     try {
-      const storedCatches = localStorage.getItem(catchesStorageKey);
-      if (storedCatches) {
-        setCatches(normalizeCatchRecords(JSON.parse(storedCatches)));
-      }
-    } catch (_) {}
+      const stored = localStorage.getItem(catchesStorageKey);
+      if (stored) setCatches(normalizeCatchRecords(JSON.parse(stored)));
+    } catch {}
     setCatchesLoaded(true);
   }, []);
 
@@ -855,24 +1319,26 @@ function AppShell({ children }: { children: ReactNode }) {
     }
   }, [catches, catchesLoaded, user]);
 
-  // ── Заголовок сторінки ───────────────────────────────────────
+  // ── Заголовок ─────────────────────────────────────────────────
   useEffect(() => {
-    const normalizedPathname = pathname.replace(/\/$/, "") || "/";
+    const normalized = pathname.replace(/\/$/, "") || "/";
     const titles: Record<string, string> = {
       "/": copy.home.title,
       "/map": `${copy.header.brand} | ${copy.header.navigationItems[1]?.label || "Карта"}`,
       "/wiki": `${copy.header.brand} • ${copy.header.navigationItems[2]?.label || "Енциклопедія"}`,
       "/stats": `${copy.header.brand} | ${copy.header.navigationItems[3]?.label || "Статистика"}`,
+      "/catches": `${copy.header.brand} | Мій щоденник`,
       "/profile": `${copy.header.brand} | ${copy.profile.label}`,
     };
-    document.title = titles[normalizedPathname] || copy.header.brand;
+    document.title = titles[normalized] || copy.header.brand;
   }, [pathname, copy]);
 
   useEffect(() => {
     setModalState({ type: "none" });
   }, [pathname]);
 
-  const openAuth = (tab: AuthTab = "login") => setModalState({ type: "auth", tab });
+  const openAuth = (tab: AuthTab = "login") =>
+    setModalState({ type: "auth", tab });
   const openProfileEdit = () => {
     if (!user) openAuth("login");
     else setModalState({ type: "profile-edit" });
@@ -887,14 +1353,14 @@ function AppShell({ children }: { children: ReactNode }) {
     closeModal();
   };
 
-  const handleProfileSave = (nextName: string, _nextEmail: string) => {
-    setUser((prev) => prev ? { ...prev, name: nextName } : null);
+  const handleProfileSave = (nextName: string) => {
+    setUser((prev) => (prev ? { ...prev, name: nextName } : null));
     closeModal();
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('arundo-user');
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem("arundo-user");
     setUser(null);
     setFavoriteWaterIds([]);
     closeModal();
@@ -902,7 +1368,9 @@ function AppShell({ children }: { children: ReactNode }) {
   };
 
   const toggleFavorite = (id: string) => {
-    setFavoriteWaterIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    setFavoriteWaterIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
   };
 
   const updateUser = (updatedUser: HeaderUser) => {
@@ -911,16 +1379,17 @@ function AppShell({ children }: { children: ReactNode }) {
   };
 
   const addCatch = (catchInput: CatchInput) => {
-    setCatches(prev => [{ ...catchInput, id: createCatchId() }, ...prev]);
+    setCatches((prev) => [{ ...catchInput, id: createCatchId() }, ...prev]);
   };
-  const removeCatch = (id: string) => setCatches(prev => prev.filter(c => c.id !== id));
+  const removeCatch = (id: string) =>
+    setCatches((prev) => prev.filter((c) => c.id !== id));
   const clearCatches = () => setCatches([]);
 
   if (isLoadingUser) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600" />
           <p className="mt-2 text-sm text-slate-500">Завантаження...</p>
         </div>
       </div>
@@ -986,14 +1455,27 @@ function AppShell({ children }: { children: ReactNode }) {
         copy={copy}
         onThemeChange={(theme) => setSettings((s) => ({ ...s, theme }))}
         onLanguageChange={(language) => setSettings((s) => ({ ...s, language }))}
-        onNotificationsChange={(enabled) => setSettings((s) => ({ ...s, notificationsEnabled: enabled }))}
+        onNotificationsChange={(enabled) =>
+          setSettings((s) => ({ ...s, notificationsEnabled: enabled }))
+        }
         onClose={closeModal}
         modalCopy={modalCopy}
       />
 
-      <SupportModal open={modalState.type === "support"} onClose={closeModal} user={user} copy={copy} />
+      <SupportModal
+        open={modalState.type === "support"}
+        onClose={closeModal}
+        user={user}
+        copy={copy}
+      />
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </AppUIContext.Provider>
   );
 }
