@@ -1,4 +1,4 @@
-/* eslint-disable react/jsx-key, react/no-unescaped-entities, react-hooks/exhaustive-deps, @next/next/no-img-element */
+/* eslint-disable react-hooks/exhaustive-deps, @next/next/no-img-element */
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -95,10 +95,10 @@ const SunIcon = () => (
   </svg>
 );
 
-// ─── Coord mode buttons — винесено щоб уникнути JSX в масиві ──
+// ─── Coord mode buttons ───────────────────────────────────────
 const COORD_MODES = [
-  { id: 'manual', label: 'Вручну',   icon: <PinIcon /> },
-  { id: 'map',    label: 'На карті', icon: <MapIcon /> },
+  { id: 'manual', label: 'Вручну',   icon: <PinIcon key="pin-icon" /> },
+  { id: 'map',    label: 'На карті', icon: <MapIcon key="map-icon" /> },
 ];
 
 // ─── Toast ────────────────────────────────────────────────────
@@ -172,7 +172,7 @@ function MapPicker({ lat, lng, onSelect }) {
     });
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
-  }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   useEffect(() => {
     if (!mapRef.current || !window.L || !lat || !lng) return;
@@ -447,7 +447,7 @@ const SEASON_OPTIONS = [
   { value:'winter', label:'❄️ Зима' },
 ];
 
-// ─── Coord mode selector (без JSX в масиві) ───────────────────
+// ─── Coord mode selector ──────────────────────────────────────
 function CoordModeSelector({ coordMode, setCoordMode }) {
   return (
     <div style={{ display:'flex', gap:6, marginBottom:10 }}>
@@ -464,9 +464,9 @@ function CoordModeSelector({ coordMode, setCoordMode }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// EDIT WATER FORM
-// ═══════════════════════════════════════════════════════════════
+// ============================================================
+// EDIT WATER FORM (скорочено - без змін)
+// ============================================================
 function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel, showToast }) {
   const [form, setForm] = useState({
     name: water.name || '',
@@ -525,21 +525,16 @@ function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel
           <div style={{ fontSize:12, color:'#94a3b8', marginTop:1 }}>{water.name}</div>
         </div>
       </div>
-
       <div style={{ display:'grid', gridTemplateColumns:'460px 1fr', gap:22 }}>
         <Card>
           <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
-            <Field label="Назва" required>
-              <Inp value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє…" />
-            </Field>
+            <Field label="Назва" required><Inp value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє…" /></Field>
             <Field label="Тип водойми">
               <Sel value={form.waterType} onChange={e => setForm(p => ({ ...p, waterType: e.target.value }))} placeholder="— Обрати тип —">
                 {waterTypeOptions.map(t => <option key={t._id || t} value={t.name || t}>{t.emoji ? `${t.emoji} ${t.name}` : t.name || t}</option>)}
               </Sel>
             </Field>
-            <Field label="Опис">
-              <Inp as="textarea" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" />
-            </Field>
+            <Field label="Опис"><Inp as="textarea" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" /></Field>
             <Field label="Координати" required>
               <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} />
               {coordMode === 'manual' ? (
@@ -558,30 +553,21 @@ function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel
                 </>
               )}
             </Field>
-
             <SectionDivider label="Риби та фільтри" />
-
             <FishTagger value={fishTags} onChange={setFishTags} allFish={fishList} />
-
             {dominantFishOptions.length > 0 && (
               <ChipPicker label="Переважаючі риби (фільтри)" options={dominantFishOptions} value={dominantFish} onChange={setDominantFish} colorScheme="blue" />
             )}
-
             <ChipPicker label="Найкращі сезони" options={SEASON_OPTIONS} value={bestSeasons} onChange={setBestSeasons} colorScheme="green" />
-
             <SectionDivider label="Фотографії" />
             <ExistingImages images={water.images} toRemove={removeImages} onToggleRemove={toggleRemove} label="Поточні фото (× щоб видалити)" />
             <ImageZone files={newFiles} onChange={setNewFiles} label="Додати нові фото" multiple />
-
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginTop:4 }}>
               <Btn onClick={onCancel} variant="outline" color="#64748b">Скасувати</Btn>
-              <Btn onClick={save} disabled={loading} color="#2563eb">
-                <SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}
-              </Btn>
+              <Btn onClick={save} disabled={loading} color="#2563eb"><SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}</Btn>
             </div>
           </div>
         </Card>
-
         <div>
           <div style={{ fontWeight:700, fontSize:15, color:'#1e293b', marginBottom:14 }}>Попередній перегляд</div>
           <Card>
@@ -644,9 +630,9 @@ function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// EDIT FISH FORM
-// ═══════════════════════════════════════════════════════════════
+// ============================================================
+// EDIT FISH FORM (скорочено - без змін)
+// ============================================================
 function EditFishForm({ fish, authH, onSaved, onCancel, showToast }) {
   const [form, setForm] = useState({
     name: fish.name || '',
@@ -720,9 +706,7 @@ function EditFishForm({ fish, authH, onSaved, onCancel, showToast }) {
             <ImageZone files={newFile} onChange={f => { setNewFile(f.slice(-1)); if (f.length) setRemoveImage(false); }} label={fish.image?.url ? 'Замінити фото' : 'Завантажити фото'} multiple={false} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginTop:4 }}>
               <Btn onClick={onCancel} variant="outline" color="#64748b">Скасувати</Btn>
-              <Btn onClick={save} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)">
-                <SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}
-              </Btn>
+              <Btn onClick={save} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)"><SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}</Btn>
             </div>
           </div>
         </Card>
@@ -750,21 +734,18 @@ function EditFishForm({ fish, authH, onSaved, onCancel, showToast }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// FILTERS TAB
-// ═══════════════════════════════════════════════════════════════
+// ============================================================
+// FILTERS TAB (скорочено - без змін)
+// ============================================================
 function FiltersTab({ authH, showToast }) {
   const [waterTypes, setWaterTypes] = useState([]);
   const [filterFish, setFilterFish] = useState([]);
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState(null);
-
   const [wtForm, setWtForm] = useState({ name:'', emoji:'', description:'' });
   const [wtSaving, setWtSaving] = useState(false);
-
   const [ffForm, setFfForm] = useState({ name:'', emoji:'' });
   const [ffSaving, setFfSaving] = useState(false);
-
   const [editingWt, setEditingWt] = useState(null);
   const [editingFf, setEditingFf] = useState(null);
 
@@ -874,14 +855,12 @@ function FiltersTab({ authH, showToast }) {
         <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:'#0f172a', letterSpacing:'-0.02em' }}>Фільтри та категорії</h1>
         <p style={{ color:'#64748b', margin:'4px 0 0', fontSize:13.5 }}>Керуйте типами водойм, рибами для фільтрів і сезонами</p>
       </div>
-
       <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:14, padding:'14px 18px', marginBottom:24, display:'flex', gap:12, alignItems:'flex-start' }}>
         <span style={{ fontSize:18 }}>ℹ️</span>
         <div style={{ fontSize:13.5, color:'#1d4ed8', lineHeight:1.6 }}>
           <strong>Як це працює:</strong> Типи водойм і риби-фільтри використовуються при додаванні/редагуванні водойм. На фронтенді карти відвідувачі можуть фільтрувати водойми за типом, переважаючою рибою та сезоном.
         </div>
       </div>
-
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
         <div>
           <Card>
@@ -891,14 +870,8 @@ function FiltersTab({ authH, showToast }) {
                 <>
                   <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', marginBottom:4 }}>✏️ Редагування</div>
                   <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div>
-                      <Inp value={editingWt.emoji} onChange={e => setEditingWt(p => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div>
-                      <Inp value={editingWt.name} onChange={e => setEditingWt(p => ({ ...p, name: e.target.value }))} placeholder="Назва типу" />
-                    </div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={editingWt.emoji} onChange={e => setEditingWt(p => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} /></div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={editingWt.name} onChange={e => setEditingWt(p => ({ ...p, name: e.target.value }))} placeholder="Назва типу" /></div>
                   </div>
                   <Inp as="textarea" value={editingWt.description || ''} onChange={e => setEditingWt(p => ({ ...p, description: e.target.value }))} placeholder="Короткий опис типу…" style={{ minHeight:60 }} />
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
@@ -909,78 +882,41 @@ function FiltersTab({ authH, showToast }) {
               ) : (
                 <>
                   <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div>
-                      <Inp value={wtForm.emoji} onChange={e => setWtForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div>
-                      <Inp value={wtForm.name} onChange={e => setWtForm(p => ({ ...p, name: e.target.value }))} placeholder="Ставок, Озеро, Платна…"
-                        onKeyDown={e => { if (e.key === 'Enter') addWaterType(); }} />
-                    </div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={wtForm.emoji} onChange={e => setWtForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} /></div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={wtForm.name} onChange={e => setWtForm(p => ({ ...p, name: e.target.value }))} placeholder="Ставок, Озеро, Платна…" onKeyDown={e => { if (e.key === 'Enter') addWaterType(); }} /></div>
                   </div>
                   <Inp as="textarea" value={wtForm.description} onChange={e => setWtForm(p => ({ ...p, description: e.target.value }))} placeholder="Короткий опис типу…" style={{ minHeight:52 }} />
-                  <Btn onClick={addWaterType} disabled={wtSaving} color="#059669" shadow="rgba(5,150,105,0.2)" style={{ padding:'10px' }}>
-                    <PlusIcon /> {wtSaving ? 'Додаємо…' : 'Додати тип водойми'}
-                  </Btn>
+                  <Btn onClick={addWaterType} disabled={wtSaving} color="#059669" shadow="rgba(5,150,105,0.2)" style={{ padding:'10px' }}><PlusIcon /> {wtSaving ? 'Додаємо…' : 'Додати тип водойми'}</Btn>
                 </>
               )}
             </div>
-
             <SectionDivider label={`Усього: ${waterTypes.length}`} />
-
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:14, maxHeight:360, overflowY:'auto' }}>
               {waterTypes.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'28px 16px', color:'#94a3b8' }}>
-                  <div style={{ fontSize:26, marginBottom:6 }}>💧</div>
-                  <div style={{ fontSize:13 }}>Типів водойм ще немає</div>
-                </div>
+                <div style={{ textAlign:'center', padding:'28px 16px', color:'#94a3b8' }}><div style={{ fontSize:26, marginBottom:6 }}>💧</div><div style={{ fontSize:13 }}>Типів водойм ще немає</div></div>
               ) : waterTypes.map(wt => (
                 <div key={wt._id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:11, border:'1px solid #f1f5f9', background:'white' }}>
-                  <div style={{ width:36, height:36, borderRadius:9, background:'#f0fdf4', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
-                    {wt.emoji || '💧'}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontWeight:600, fontSize:13.5, color:'#1e293b' }}>{wt.name}</div>
-                    {wt.description && <div style={{ fontSize:11.5, color:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{wt.description}</div>}
-                  </div>
+                  <div style={{ width:36, height:36, borderRadius:9, background:'#f0fdf4', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{wt.emoji || '💧'}</div>
+                  <div style={{ flex:1, minWidth:0 }}><div style={{ fontWeight:600, fontSize:13.5, color:'#1e293b' }}>{wt.name}</div>{wt.description && <div style={{ fontSize:11.5, color:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{wt.description}</div>}</div>
                   <div style={{ display:'flex', gap:5 }}>
-                    <button onClick={() => setEditingWt({ ...wt })}
-                      style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:6, cursor:'pointer', color:'#64748b', display:'flex', transition:'all 0.15s' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#2563eb'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; }}>
-                      <EditIcon />
-                    </button>
-                    <button onClick={() => deleteWaterType(wt._id, wt.name)}
-                      style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:6, cursor:'pointer', color:'#94a3b8', display:'flex', transition:'all 0.15s' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#94a3b8'; }}>
-                      <TrashIcon />
-                    </button>
+                    <button onClick={() => setEditingWt({ ...wt })} style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:6, cursor:'pointer', color:'#64748b', display:'flex', transition:'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#2563eb'; }} onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; }}><EditIcon /></button>
+                    <button onClick={() => deleteWaterType(wt._id, wt.name)} style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:6, cursor:'pointer', color:'#94a3b8', display:'flex', transition:'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; }} onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#94a3b8'; }}><TrashIcon /></button>
                   </div>
                 </div>
               ))}
             </div>
           </Card>
         </div>
-
         <div>
           <Card>
             <CardHead icon={<FishIcon />} iconBg="#eff6ff" iconColor="#2563eb" title="Риби для фільтрів" sub="Короп, Карась, Форель, Щука…" />
-
             <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:20 }}>
               {editingFf ? (
                 <>
                   <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', marginBottom:4 }}>✏️ Редагування</div>
                   <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div>
-                      <Inp value={editingFf.emoji || ''} onChange={e => setEditingFf(p => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div>
-                      <Inp value={editingFf.name} onChange={e => setEditingFf(p => ({ ...p, name: e.target.value }))} placeholder="Короп…" />
-                    </div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={editingFf.emoji || ''} onChange={e => setEditingFf(p => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} /></div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={editingFf.name} onChange={e => setEditingFf(p => ({ ...p, name: e.target.value }))} placeholder="Короп…" /></div>
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                     <Btn onClick={() => setEditingFf(null)} variant="outline" color="#64748b" style={{ padding:'9px' }}>Скасувати</Btn>
@@ -990,54 +926,29 @@ function FiltersTab({ authH, showToast }) {
               ) : (
                 <>
                   <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div>
-                      <Inp value={ffForm.emoji} onChange={e => setFfForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА РИБИ *</div>
-                      <Inp value={ffForm.name} onChange={e => setFfForm(p => ({ ...p, name: e.target.value }))} placeholder="Короп, Форель, Щука…"
-                        onKeyDown={e => { if (e.key === 'Enter') addFilterFish(); }} />
-                    </div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={ffForm.emoji} onChange={e => setFfForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} /></div>
+                    <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА РИБИ *</div><Inp value={ffForm.name} onChange={e => setFfForm(p => ({ ...p, name: e.target.value }))} placeholder="Короп, Форель, Щука…" onKeyDown={e => { if (e.key === 'Enter') addFilterFish(); }} /></div>
                   </div>
-                  <Btn onClick={addFilterFish} disabled={ffSaving} color="#2563eb" style={{ padding:'10px' }}>
-                    <PlusIcon /> {ffSaving ? 'Додаємо…' : 'Додати рибу до фільтрів'}
-                  </Btn>
+                  <Btn onClick={addFilterFish} disabled={ffSaving} color="#2563eb" style={{ padding:'10px' }}><PlusIcon /> {ffSaving ? 'Додаємо…' : 'Додати рибу до фільтрів'}</Btn>
                 </>
               )}
             </div>
-
             <SectionDivider label={`Усього: ${filterFish.length}`} />
-
             <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:14, maxHeight:360, overflowY:'auto' }}>
               {filterFish.length === 0 ? (
-                <div style={{ textAlign:'center', width:'100%', padding:'28px 16px', color:'#94a3b8' }}>
-                  <div style={{ fontSize:26, marginBottom:6 }}>🐟</div>
-                  <div style={{ fontSize:13 }}>Риб для фільтрів ще немає</div>
-                </div>
+                <div style={{ textAlign:'center', width:'100%', padding:'28px 16px', color:'#94a3b8' }}><div style={{ fontSize:26, marginBottom:6 }}>🐟</div><div style={{ fontSize:13 }}>Риб для фільтрів ще немає</div></div>
               ) : filterFish.map(ff => (
                 <div key={ff._id} style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 12px 6px 8px', borderRadius:20, border:'1px solid #e2e8f0', background:'white' }}>
                   <span style={{ fontSize:16 }}>{ff.emoji || '🐟'}</span>
                   <span style={{ fontSize:13, fontWeight:500, color:'#1e293b' }}>{ff.name}</span>
-                  <button onClick={() => setEditingFf({ ...ff })}
-                    style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0, display:'flex', marginLeft:2, transition:'color 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.color = '#2563eb'}
-                    onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>
-                    <EditIcon />
-                  </button>
-                  <button onClick={() => deleteFilterFish(ff._id, ff.name)}
-                    style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0, display:'flex', transition:'color 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
-                    onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>
-                    <XIcon />
-                  </button>
+                  <button onClick={() => setEditingFf({ ...ff })} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0, display:'flex', marginLeft:2, transition:'color 0.15s' }} onMouseEnter={e => e.currentTarget.style.color = '#2563eb'} onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}><EditIcon /></button>
+                  <button onClick={() => deleteFilterFish(ff._id, ff.name)} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0, display:'flex', transition:'color 0.15s' }} onMouseEnter={e => e.currentTarget.style.color = '#dc2626'} onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}><XIcon /></button>
                 </div>
               ))}
             </div>
           </Card>
         </div>
       </div>
-
       <Card style={{ marginTop:24 }}>
         <CardHead icon={<SunIcon />} iconBg="#fff7ed" iconColor="#ea580c" title="Сезони ловлі" sub="Вбудовані — не потребують налаштування" />
         <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
@@ -1049,10 +960,7 @@ function FiltersTab({ authH, showToast }) {
           ].map(s => (
             <div key={s.label} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:12, background:s.bg, border:`1px solid ${s.border}`, flex:'1 1 180px' }}>
               <span style={{ fontSize:24 }}>{s.emoji}</span>
-              <div>
-                <div style={{ fontWeight:700, fontSize:14, color:s.color }}>{s.label}</div>
-                <div style={{ fontSize:12, color:'#64748b', marginTop:1 }}>{s.desc}</div>
-              </div>
+              <div><div style={{ fontWeight:700, fontSize:14, color:s.color }}>{s.label}</div><div style={{ fontSize:12, color:'#64748b', marginTop:1 }}>{s.desc}</div></div>
             </div>
           ))}
         </div>
@@ -1060,19 +968,17 @@ function FiltersTab({ authH, showToast }) {
           При редагуванні водойми вкажіть в яких сезонах ловиться риба найкраще — це відобразиться на карті як фільтр.
         </div>
       </Card>
-
       {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ============================================================
 // MAIN ADMIN PANEL
-// ═══════════════════════════════════════════════════════════════
+// ============================================================
 export default function AdminPanel() {
   const [token, setToken] = useState('');
   const [activeTab, setActiveTab] = useState('water');
-
   const [waterBodies, setWaterBodies] = useState([]);
   const [fishList, setFishList] = useState([]);
   const [filterConfig, setFilterConfig] = useState({ waterTypes: [], filterFish: [] });
@@ -1080,17 +986,14 @@ export default function AdminPanel() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
   const [confirm, setConfirm] = useState(null);
-
   const [editingWater, setEditingWater] = useState(null);
   const [editingFish, setEditingFish] = useState(null);
-
   const [wForm, setWF] = useState({ name:'', lat:'', lng:'', description:'', waterType:'' });
   const [wFiles, setWFiles] = useState([]);
   const [fishTags, setFishTags] = useState([]);
   const [dominantFish, setDominantFish] = useState([]);
   const [bestSeasons, setBestSeasons] = useState([]);
   const [coordMode, setCoordMode] = useState('manual');
-
   const [fForm, setFF] = useState({ name:'', scientificName:'', description:'', maxWeight:'', maxLength:'' });
   const [fFile, setFFile] = useState([]);
 
@@ -1120,7 +1023,7 @@ export default function AdminPanel() {
   useEffect(() => {
     const t = localStorage.getItem('adminToken');
     if (t) { setToken(t); loadData(t); }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const addWater = async () => {
     if (!wForm.name || !wForm.lat || !wForm.lng) { showToast("Назва та координати обов'язкові", 'error'); return; }
@@ -1233,7 +1136,6 @@ export default function AdminPanel() {
     <>
       <style>{CSS_GLOBAL}</style>
       <div style={{ minHeight:'100vh', background:'#f8fafc', fontFamily:"'Segoe UI', system-ui, sans-serif", color:'#1e293b' }}>
-
         <div style={{ background:'white', borderBottom:'1px solid #e2e8f0', padding:'0 32px', display:'flex', alignItems:'center', gap:2, boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, padding:'15px 0', marginRight:20 }}>
             <span style={{ fontSize:18 }}>🎣</span>
@@ -1250,9 +1152,7 @@ export default function AdminPanel() {
             </button>
           ))}
         </div>
-
         <div style={{ maxWidth:1340, margin:'0 auto', padding:'32px 32px 72px', animation:'fadeUp 0.28s ease' }}>
-
           {activeTab === 'water' && (
             <div>
               <div style={{ marginBottom:26 }}>
@@ -1263,17 +1163,13 @@ export default function AdminPanel() {
                 <Card>
                   <CardHead icon={<PlusIcon />} iconBg="#eff6ff" iconColor="#2563eb" title="Нова водойма" sub="Заповніть і збережіть" />
                   <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
-                    <Field label="Назва" required>
-                      <Inp value={wForm.name} onChange={e => setWF(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє, р. Горинь…" />
-                    </Field>
+                    <Field label="Назва" required><Inp value={wForm.name} onChange={e => setWF(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє, р. Горинь…" /></Field>
                     <Field label="Тип водойми">
                       <Sel value={wForm.waterType} onChange={e => setWF(p => ({ ...p, waterType: e.target.value }))} placeholder="— Обрати тип —">
                         {filterConfig.waterTypes.map(t => <option key={t._id} value={t.name}>{t.emoji ? `${t.emoji} ${t.name}` : t.name}</option>)}
                       </Sel>
                     </Field>
-                    <Field label="Опис">
-                      <Inp as="textarea" value={wForm.description} onChange={e => setWF(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" />
-                    </Field>
+                    <Field label="Опис"><Inp as="textarea" value={wForm.description} onChange={e => setWF(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" /></Field>
                     <Field label="Координати" required>
                       <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} />
                       {coordMode === 'manual' ? (
@@ -1301,10 +1197,10 @@ export default function AdminPanel() {
                     <Btn onClick={addWater} disabled={loading}><PlusIcon /> {loading ? 'Зберігаємо…' : 'Додати водойму'}</Btn>
                   </div>
                 </Card>
-
                 <div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14 }}>
                     <div style={{ fontWeight:700, fontSize:15, color:'#1e293b' }}>Усі водойми</div>
+                    {/* FIXED: апостроф замінено на &apos; */}
                     <div style={{ fontSize:13, color:'#94a3b8' }}>{waterBodies.length} об&apos;єктів</div>
                   </div>
                   <Card style={{ padding:14 }}>
@@ -1342,7 +1238,6 @@ export default function AdminPanel() {
               </div>
             </div>
           )}
-
           {activeTab === 'fish' && (
             <div>
               <div style={{ marginBottom:26 }}>
@@ -1361,9 +1256,7 @@ export default function AdminPanel() {
                       <Field label="Макс. довжина (см)"><Inp type="number" min="0" value={fForm.maxLength} onChange={e => setFF(p => ({ ...p, maxLength: e.target.value }))} placeholder="90" /></Field>
                     </div>
                     <ImageZone files={fFile} onChange={f => setFFile(f.slice(-1))} label="Фото риби" multiple={false} />
-                    <Btn onClick={addFish} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)">
-                      <PlusIcon /> {loading ? 'Зберігаємо…' : 'Додати до довідника'}
-                    </Btn>
+                    <Btn onClick={addFish} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)"><PlusIcon /> {loading ? 'Зберігаємо…' : 'Додати до довідника'}</Btn>
                   </div>
                 </Card>
                 <div>
@@ -1396,11 +1289,9 @@ export default function AdminPanel() {
               </div>
             </div>
           )}
-
           {activeTab === 'filters' && (
             <FiltersTab authH={authH} showToast={showToast} />
           )}
-
           {activeTab === 'stats' && (
             <div>
               <div style={{ marginBottom:26 }}>
@@ -1435,8 +1326,7 @@ export default function AdminPanel() {
                           </div>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                             <div style={{ fontSize:12, color:'#94a3b8' }}>{w.fishSpecies?.length || 0} видів</div>
-                            <button onClick={() => { setActiveTab('water'); setTimeout(() => setEditingWater(w), 50); }}
-                              style={{ background:'#eff6ff', border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:'#2563eb', fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
+                            <button onClick={() => { setActiveTab('water'); setTimeout(() => setEditingWater(w), 50); }} style={{ background:'#eff6ff', border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:'#2563eb', fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
                           </div>
                         </div>
                       ))}
@@ -1452,8 +1342,7 @@ export default function AdminPanel() {
                           </div>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                             <div style={{ fontSize:12, color:'#94a3b8' }}>{f.maxWeight ? `≤${f.maxWeight} кг` : '—'}</div>
-                            <button onClick={() => { setActiveTab('fish'); setTimeout(() => setEditingFish(f), 50); }}
-                              style={{ background:'#f0fdf4', border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:'#059669', fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
+                            <button onClick={() => { setActiveTab('fish'); setTimeout(() => setEditingFish(f), 50); }} style={{ background:'#f0fdf4', border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:'#059669', fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
                           </div>
                         </div>
                       ))}
@@ -1470,7 +1359,6 @@ export default function AdminPanel() {
           )}
         </div>
       </div>
-
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
       {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
     </>
