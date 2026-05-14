@@ -798,6 +798,357 @@ app.delete('/api/fish/:id', authMiddleware, requireRole('admin'), async (req, re
 });
 
 // ============================================================
+//  CATCHES (Записи улову)
+//  Додати ці маршрути до server.js після секції FISH
+// ============================================================
+
+// ─── Storage для фото улову ───────────────────────────────────
+const catchStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'arundo/catches',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto' }],
+  },
+});
+const uploadCatch = multer({ storage: catchStorage, limits: { fileSize: 10 * 1024 * 1024 } });
+
+// ─── Форматування запису улову ────────────────────────────────
+function formatCatch(c) {
+  return {
+    _id: c._id.toString(),
+    userId: c.userId,
+    userName: c.userName || '',
+    waterbodyId: c.waterbodyId,
+    waterbodyName: c.waterbodyName || '',
+    waterbodyCoords: c.waterbodyCoords || null,
+    date: c.date,
+    species: c.species || '',
+    fishCount: c.fishCount || 1,
+    biggestFishName: c.biggestFishName || '',
+    biggestFishWeight: c.biggestFishWeight || 0,
+    notes: c.notes || '',
+    photos: c.photos || [],
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt || null,
+  };
+}
+
+// ─── GET /api/catches — усі записи (admin бачить всі, user — тільки свої) ──
+app.get('/api/catches', authMiddleware, async (req, res) => {
+  try {
+    const filter = {};
+
+    // Звичайний юзер бачить тільки свої записи
+    if (req.user.role !== 'admin') {
+      filter.userId = req.user.userId;
+    }
+
+    // Фільтр по конкретному юзеру (для адміна)
+    if (req.query.userId && req.user.role === 'admin') {
+      filter.userId = req.query.userId;
+    }
+
+    // Фільтр по водоймі
+    if (req.query.waterbodyId) {
+      filter.waterbodyId = req.query.waterbodyId;
+    }
+
+    const catches = await db
+      .collection('catches')
+      .find(filter)
+      .sort({ date: -1, createdAt: -1 })
+      .toArray();
+
+    res.json(catches.map(formatCatch));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GET /api/catches/my — свої записи (зручний аліас) ────────
+app.get('/api/catches/my', authMiddleware, async (req, res) => {
+  try {
+    const catches = await db
+      .collection('catches')
+      .find({ userId: req.user.userId })
+      .sort({ date: -1, createdAt: -1 })
+      .toArray();
+
+    res.json(catches.map(formatCatch));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GET /api/catches/:id — один запис ────────────────────────
+app.get('/api/catches/:id', authMiddleware, async (req, res) => {
+  try {
+    const catchRecord = await db
+      .collection('catches')
+      .findOne({ _id: new ObjectId(req.params.id) });
+
+    if (!catchRecord) {
+      return res.status(404).json({ error: 'Запис не знайдено' });
+    }
+
+    // Юзер може бачити тільки свої записи
+    if (req.user.role !== 'admin' && catchRecord.userId !== req.user.userId) {
+      return res.status(403).json({ error: 'Доступ заборонено' });
+    }
+
+    res.json(formatCatch(catchRecord));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── POST /api/catches — створити запис улову ─────────────────
+app.post(
+  '/api/catches',
+  authMiddleware,
+  uploadCatch.array('photos', 10),
+  async (req, res) => {
+    try {
+      const {
+        waterbodyId,
+        date,
+        species,
+        fishCount,
+        biggestFishName,
+        biggestFishWeight,
+        notes,
+      } = req.body;
+
+      if (!waterbodyId || !date || !species) {
+        return res.status(400).json({
+          error: "Водойма, дата та вид риби обов'язкові",
+        });
+      }
+
+      // Перевіряємо чи існує водойма
+      let waterbody = null;
+      try {
+        waterbody = await db
+          .collection('waterbodies')
+          .findOne({ _id: new ObjectId(waterbodyId) });
+      } catch {
+        return res.status(400).json({ error: 'Невірний ID водойми' });
+      }
+
+      if (!waterbody) {
+        return res.status(404).json({ error: 'Водойму не знайдено' });
+      }
+
+      const photos = (req.files || []).map((f) => ({
+        url: f.path,
+        publicId: f.filename,
+      }));
+
+      const doc = {
+        userId: req.user.userId,
+        userName: req.user.name || '',
+        waterbodyId: waterbodyId,
+        waterbodyName: waterbody.name,
+        waterbodyCoords: waterbody.location?.coordinates
+          ? {
+              lng: waterbody.location.coordinates[0],
+              lat: waterbody.location.coordinates[1],
+            }
+          : null,
+        date: date,
+        species: String(species).trim(),
+        fishCount: Math.max(1, parseInt(fishCount) || 1),
+        biggestFishName: String(biggestFishName || '').trim(),
+        biggestFishWeight: parseFloat(biggestFishWeight) || 0,
+        notes: String(notes || '').trim(),
+        photos,
+        createdAt: new Date().toISOString(),
+      };
+
+      const result = await db.collection('catches').insertOne(doc);
+      res.status(201).json({
+        message: 'Запис улову додано',
+        catch: formatCatch({ ...doc, _id: result.insertedId }),
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// ─── PUT /api/catches/:id — оновити запис ─────────────────────
+app.put(
+  '/api/catches/:id',
+  authMiddleware,
+  uploadCatch.array('photos', 10),
+  async (req, res) => {
+    try {
+      const existing = await db
+        .collection('catches')
+        .findOne({ _id: new ObjectId(req.params.id) });
+
+      if (!existing) {
+        return res.status(404).json({ error: 'Запис не знайдено' });
+      }
+
+      // Тільки власник або адмін може редагувати
+      if (
+        req.user.role !== 'admin' &&
+        existing.userId !== req.user.userId
+      ) {
+        return res.status(403).json({ error: 'Доступ заборонено' });
+      }
+
+      const {
+        date,
+        species,
+        fishCount,
+        biggestFishName,
+        biggestFishWeight,
+        notes,
+        removePhotos,
+      } = req.body;
+
+      let currentPhotos = existing.photos || [];
+
+      // Видаляємо вибрані фото
+      if (removePhotos) {
+        const toRemove = parseJsonField(removePhotos, []);
+        for (const publicId of toRemove) {
+          try {
+            await cloudinary.uploader.destroy(publicId);
+          } catch (_) {}
+        }
+        currentPhotos = currentPhotos.filter(
+          (p) => !toRemove.includes(p.publicId)
+        );
+      }
+
+      // Додаємо нові фото
+      if (req.files && req.files.length > 0) {
+        currentPhotos = [
+          ...currentPhotos,
+          ...req.files.map((f) => ({ url: f.path, publicId: f.filename })),
+        ];
+      }
+
+      const update = {
+        date: date || existing.date,
+        species: String(species || existing.species).trim(),
+        fishCount: Math.max(1, parseInt(fishCount) || existing.fishCount),
+        biggestFishName: String(
+          biggestFishName !== undefined ? biggestFishName : existing.biggestFishName
+        ).trim(),
+        biggestFishWeight:
+          biggestFishWeight !== undefined
+            ? parseFloat(biggestFishWeight) || 0
+            : existing.biggestFishWeight,
+        notes: String(notes !== undefined ? notes : existing.notes).trim(),
+        photos: currentPhotos,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await db
+        .collection('catches')
+        .updateOne(
+          { _id: new ObjectId(req.params.id) },
+          { $set: update }
+        );
+
+      res.json({ message: 'Запис оновлено', _id: req.params.id });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
+// ─── DELETE /api/catches/:id — видалити запис ─────────────────
+app.delete('/api/catches/:id', authMiddleware, async (req, res) => {
+  try {
+    const catchRecord = await db
+      .collection('catches')
+      .findOne({ _id: new ObjectId(req.params.id) });
+
+    if (!catchRecord) {
+      return res.status(404).json({ error: 'Запис не знайдено' });
+    }
+
+    // Тільки власник або адмін може видаляти
+    if (
+      req.user.role !== 'admin' &&
+      catchRecord.userId !== req.user.userId
+    ) {
+      return res.status(403).json({ error: 'Доступ заборонено' });
+    }
+
+    // Видаляємо всі фото з Cloudinary
+    for (const photo of catchRecord.photos || []) {
+      try {
+        await cloudinary.uploader.destroy(photo.publicId);
+      } catch (_) {}
+    }
+
+    await db
+      .collection('catches')
+      .deleteOne({ _id: new ObjectId(req.params.id) });
+
+    res.json({ message: 'Запис видалено', _id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── GET /api/catches/stats/summary — статистика для дашборду ─
+app.get('/api/catches/stats/summary', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.role === 'admin' && req.query.userId
+      ? req.query.userId
+      : req.user.userId;
+
+    const catches = await db
+      .collection('catches')
+      .find({ userId })
+      .toArray();
+
+    const totalFish = catches.reduce((sum, c) => sum + (c.fishCount || 0), 0);
+
+    const biggestCatch = catches
+      .filter((c) => c.biggestFishName && c.biggestFishWeight > 0)
+      .sort((a, b) => b.biggestFishWeight - a.biggestFishWeight)[0] || null;
+
+    const speciesMap = new Map();
+    for (const c of catches) {
+      speciesMap.set(
+        c.species,
+        (speciesMap.get(c.species) || 0) + c.fishCount
+      );
+    }
+    const topSpecies = Array.from(speciesMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, count }));
+
+    res.json({
+      totalSessions: catches.length,
+      totalFish,
+      biggestCatch: biggestCatch
+        ? {
+            name: biggestCatch.biggestFishName,
+            weight: biggestCatch.biggestFishWeight,
+            species: biggestCatch.species,
+            date: biggestCatch.date,
+            waterbodyName: biggestCatch.waterbodyName,
+          }
+        : null,
+      topSpecies,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================================
 //  STATS
 // ============================================================
 app.get('/api/stats', async (req, res) => {
