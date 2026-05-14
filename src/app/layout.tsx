@@ -6,6 +6,8 @@ import { buildRouteMetadata, getLanguageFromCookies } from "@/lib/site-metadata"
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
 export async function generateMetadata(): Promise<Metadata> {
