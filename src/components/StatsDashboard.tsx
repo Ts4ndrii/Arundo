@@ -462,17 +462,10 @@ function CatchDialog({
 
   return (
     // ── Фікс: items-start + pt-safe щоб не залазило під хедер ──
-<<<<<<< HEAD
-    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/60 px-4 pt-28 pb-4 backdrop-blur-sm sm:items-center sm:pt-4">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/60 px-4 pt-16 pb-4 backdrop-blur-sm sm:items-center sm:pt-4">
       <button type="button" aria-label="Закрити" className="absolute inset-0 cursor-default" onClick={onClose} />
       <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 flex flex-col"
-        style={{ maxHeight: "calc(100vh - 7rem)" }}
-=======
-    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/60 px-4 pt-36 pb-4 backdrop-blur-sm sm:items-center sm:pt-4">
-      <button type="button" aria-label="Закрити" className="absolute inset-0 cursor-default" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 flex flex-col"
-        style={{ maxHeight: "calc(100vh - 9rem)" }}
->>>>>>> develop
+        style={{ maxHeight: "calc(100vh - 5rem)" }}
       >
         {/* Header — компактний */}
         <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/70 shrink-0 flex items-center justify-between">
