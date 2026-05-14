@@ -2,6 +2,9 @@
 // Сервер для ARUNDO - Карта водойм та риб
 // ============================================
 
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
+
 require('dotenv').config();
 
 const express = require('express');
