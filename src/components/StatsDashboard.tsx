@@ -74,9 +74,11 @@ function AuthGate() {
 
   return (
     <div className="rounded-[2rem] border border-slate-200 bg-white overflow-hidden shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {/* Decorative top bar */}
       <div className="h-2 bg-gradient-to-r from-blue-500 via-blue-400 to-emerald-400" />
 
       <div className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
+        {/* Icon */}
         <div className="relative mb-6">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-600/10 dark:bg-blue-500/10">
             <Fish className="h-10 w-10 text-blue-600 dark:text-blue-400" />
@@ -93,6 +95,7 @@ function AuthGate() {
           Зареєструйтесь або увійдіть, щоб записувати улови, додавати фото та переглядати особисту статистику.
         </p>
 
+        {/* Feature list */}
         <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3 text-sm">
           {[
             { icon: "📍", text: "Прив'язка до водойми" },
@@ -109,6 +112,7 @@ function AuthGate() {
           ))}
         </div>
 
+        {/* CTA buttons */}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
@@ -164,6 +168,7 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
         center: [lat, lng],
         zoom: 13,
         zoomControl: true,
+        // ── Інтерактивна карта ──
         scrollWheelZoom: true,
         dragging: true,
         doubleClickZoom: true,
@@ -171,6 +176,7 @@ function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: string })
       });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
+      // Одна мітка — тільки вибрана водойма
       const icon = L.divIcon({
         className: "",
         html: `<div style="width:28px;height:28px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;">
@@ -455,14 +461,14 @@ function CatchDialog({
   const existingPhotos = (initial?.photos ?? []).filter((p) => !removeIds.includes(p.publicId));
 
   return (
-    // Виправлено: вужчий діалог, зменшено верхній відступ, додано max-width
-    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/60 px-4 pt-12 pb-4 backdrop-blur-sm sm:items-center sm:pt-4">
+    // ── Фікс: items-start + pt-safe щоб не залазило під хедер ──
+    <div className="fixed inset-0 z-[100] flex items-start justify-center bg-slate-950/60 px-4 pt-36 pb-4 backdrop-blur-sm sm:items-center sm:pt-4">
       <button type="button" aria-label="Закрити" className="absolute inset-0 cursor-default" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 flex flex-col"
-        style={{ maxHeight: "calc(100vh - 3rem)" }}
+      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-900 flex flex-col"
+        style={{ maxHeight: "calc(100vh - 9rem)" }}
       >
-        {/* Header — компактний, з нормальним відступом */}
-        <div className="border-b border-slate-200 bg-slate-50 px-5 py-3 dark:border-slate-800 dark:bg-slate-950/70 shrink-0 flex items-center justify-between">
+        {/* Header — компактний */}
+        <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/70 shrink-0 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
               {isEdit ? "Редагувати запис" : "Новий запис"}
@@ -474,17 +480,17 @@ function CatchDialog({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-800"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-5 py-3 sm:px-6 space-y-3">
+        <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 px-5 py-4 sm:px-7 space-y-4">
           {/* Водойма */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Водойма *</label>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Водойма *</label>
             <WaterbodySelector
               value={draft.waterbodyId}
               displayName={draft.waterbodyName}
@@ -492,73 +498,73 @@ function CatchDialog({
             />
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Дата *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Дата *</label>
               <input
                 type="date" value={draft.date}
                 onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
-                className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Вид риби *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Вид риби *</label>
               <input
                 type="text" value={draft.species}
                 onChange={(e) => setDraft((d) => ({ ...d, species: e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1) }))}
                 placeholder="Короп, Щука, Карась…"
-                className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Кількість риб *</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Кількість риб *</label>
               <input
                 type="number" min="1" step="1" value={draft.fishCount}
                 onChange={(e) => setDraft((d) => ({ ...d, fishCount: e.target.value }))}
-                className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Трофей — назва</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Трофей — назва</label>
               <input
                 type="text" value={draft.biggestFishName}
                 onChange={(e) => setDraft((d) => ({ ...d, biggestFishName: e.target.value }))}
                 placeholder="Необов'язково"
-                className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Трофей — вага (кг)</label>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Трофей — вага (кг)</label>
               <input
                 type="number" min="0.1" step="0.01" value={draft.biggestFishWeight}
                 onChange={(e) => setDraft((d) => ({ ...d, biggestFishWeight: e.target.value }))}
                 placeholder="5.3"
-                className="h-10 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Нотатки</label>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Нотатки</label>
             <textarea
               value={draft.notes}
               onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
               placeholder="Що клювало, на що, погода, настрій…"
               rows={2}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 resize-none focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 resize-none focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             />
           </div>
 
           {/* Фото */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Фото улову</label>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Фото улову</label>
             {existingPhotos.length > 0 && (
-              <div className="mb-2">
+              <div className="mb-3">
                 <PhotoGrid photos={existingPhotos} onRemove={(id) => setRemoveIds((p) => [...p, id])} />
               </div>
             )}
             {photoPreviews.length > 0 && (
-              <div className={`mb-2 grid gap-2 ${photoPreviews.length === 1 ? "grid-cols-1" : photoPreviews.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+              <div className={`mb-3 grid gap-2 ${photoPreviews.length === 1 ? "grid-cols-1" : photoPreviews.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
                 {photoPreviews.map((src, i) => (
                   <div key={i} className="relative group overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800" style={{ aspectRatio: "4/3" }}>
                     <div className="absolute inset-0 bg-cover bg-center scale-110 blur-md opacity-60" style={{ backgroundImage: `url(${src})` }} />
@@ -566,8 +572,8 @@ function CatchDialog({
                     <button type="button" onClick={() => {
                       setPhotoFiles((p) => p.filter((_, j) => j !== i));
                       setPhotoPreviews((p) => p.filter((_, j) => j !== i));
-                    }} className="absolute top-2 right-2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition shadow">
-                      <X className="h-3 w-3" />
+                    }} className="absolute top-2 right-2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition shadow">
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ))}
@@ -575,29 +581,27 @@ function CatchDialog({
             )}
             <button
               type="button" onClick={() => fileRef.current?.click()}
-              className="inline-flex h-9 items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
+              className="inline-flex h-10 items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 text-sm font-medium text-slate-600 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
             >
-              <Camera className="h-3.5 w-3.5" /> Додати фото
+              <Camera className="h-4 w-4" /> Додати фото
             </button>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFilePick} />
           </div>
 
           {error && (
-            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
-              {error}
-            </p>
+            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">{error}</p>
           )}
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end pt-1 pb-1">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end pt-1 pb-2">
             <button type="button" onClick={onClose}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
             >
               Скасувати
             </button>
             <button type="submit" disabled={saving}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
             >
-              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               {saving ? "Зберігаємо…" : isEdit ? "Зберегти зміни" : "Додати запис"}
             </button>
           </div>
@@ -741,7 +745,7 @@ function ConfirmDialog({ open, title, description, onClose, onConfirm }: {
 }
 
 // ─── Main Page ────────────────────────────────────────────────
-export default function StatsDashboard() {
+export default function CatchesPage() {
   const { user } = useAppUI();
   const [catches, setCatches] = useState<CatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -804,6 +808,7 @@ export default function StatsDashboard() {
       />
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 transition-colors duration-200 dark:bg-slate-950 min-h-screen">
+        {/* Page header */}
         <section className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.35em] text-blue-600 dark:text-blue-300">
             Мій щоденник
@@ -816,12 +821,14 @@ export default function StatsDashboard() {
           </p>
         </section>
 
+        {/* ── Незареєстрований ── */}
         {!user ? (
           <div className="mt-8">
             <AuthGate />
           </div>
         ) : (
           <>
+            {/* Tabs + Add button */}
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 w-fit dark:border-slate-800 dark:bg-slate-900">
                 {(["list", "stats"] as const).map((t) => (
@@ -851,6 +858,7 @@ export default function StatsDashboard() {
               </button>
             </div>
 
+            {/* LIST TAB */}
             {tab === "list" && (
               <div className="mt-6">
                 {loading ? (
@@ -889,6 +897,7 @@ export default function StatsDashboard() {
               </div>
             )}
 
+            {/* STATS TAB */}
             {tab === "stats" && (
               <div className="mt-6 space-y-6">
                 <div className="grid gap-4 sm:grid-cols-3">
