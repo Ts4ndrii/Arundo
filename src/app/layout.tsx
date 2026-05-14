@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import AppShell from "@/components/AppShell";
 import { buildRouteMetadata, getLanguageFromCookies } from "@/lib/site-metadata";
 import "./globals.css";
@@ -108,6 +109,7 @@ export default function RootLayout({
           }}
         />
         <AppShell>{children}</AppShell>
+        <SpeedInsights />
       </body>
     </html>
   );
