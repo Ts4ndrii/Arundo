@@ -1,4 +1,8 @@
 # 🎣 Arundo — Онлайн довідник для рибалок України
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 
 Повноцінний вебдодаток для рибалок-любителів та спортсменів України. Платформа об'єднує інтерактивну карту водойм, енциклопедію риб з фільтрацією, особистий щоденник уловів та профіль користувача. Реалізована JWT-авторизація з рольовим доступом, завантаження зображень через Cloudinary, адміністративна панель та мультимовний інтерфейс.
 
