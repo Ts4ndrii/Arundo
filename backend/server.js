@@ -20,7 +20,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || 'arundo_secret_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // ─── Cloudinary ──────────────────────────────────────────────
 cloudinary.config({
