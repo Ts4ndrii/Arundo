@@ -239,9 +239,8 @@ export default function ProfilePageContent() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-  // Локальний стан улюблених — єдине джерело правди в цьому компоненті
-  const [localFavorites, setLocalFavorites] = useState<string[]>([]);
-  const syncedFromDB = useRef(false);
+  // Відстежуємо pending DB запити щоб уникнути race conditions
+  const pendingRef = useRef<Set<string>>(new Set());
 
   const displayName = fixEncoding(user?.name) || copy.profile.guestName;
   const displayEmail = user?.email || copy.profile.guestEmail;
@@ -258,17 +257,11 @@ export default function ProfilePageContent() {
       ? localStorage.getItem("adminToken") || localStorage.getItem("userToken")
       : null;
 
-  // ── Синхронізуємо localFavorites з AppShell при першому рендері ──────────
-  // Після цього localFavorites є єдиним джерелом правди для цієї сторінки
-  useEffect(() => {
-    setLocalFavorites(favoriteWaterIds);
-  }, []); // навмисно порожній масив — лише при монтуванні
-
-  // ── Завантажити улюблені з БД один раз ───────────────────────────────────
+  // ── Завантажити улюблені з БД один раз при монтуванні ───────────────────
+  // Оновлюємо AppShell — після цього favoriteWaterIds є єдиним джерелом правди
   useEffect(() => {
     const token = getToken();
-    if (!token || syncedFromDB.current) return;
-    syncedFromDB.current = true;
+    if (!token) return;
 
     (async () => {
       try {
@@ -277,10 +270,9 @@ export default function ProfilePageContent() {
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.favorites && Array.isArray(data.favorites)) {
-            // Оновлюємо і локальний стан, і AppShell
-            setLocalFavorites(data.favorites);
-            if (user) updateUser({ ...user, favoriteWaters: data.favorites });
+          if (data.favorites && Array.isArray(data.favorites) && user) {
+            // Оновлюємо AppShell — це автоматично оновить favoriteWaterIds скрізь
+            updateUser({ ...user, favoriteWaters: data.favorites });
           }
         }
       } catch (_) {}
@@ -303,27 +295,24 @@ export default function ProfilePageContent() {
     })();
   }, []);
 
-  // ── Toggle улюбленого: оновлює localFavorites + AppShell + БД ─────────────
+  // ── Toggle улюбленого: викликає toggleFavorite з AppShell (як у вікі) + синхронізує БД ──
   const handleToggleFavorite = useCallback(
     async (waterId: string) => {
-      const isCurrentlyFavorite = localFavorites.includes(waterId);
+      // Запобігаємо подвійному кліку
+      if (pendingRef.current.has(waterId)) return;
+      pendingRef.current.add(waterId);
 
-      // 1. Оновлюємо локальний стан одразу (оптимістично)
-      const newFavorites = isCurrentlyFavorite
-        ? localFavorites.filter((id) => id !== waterId)
-        : [...localFavorites, waterId];
-      setLocalFavorites(newFavorites);
+      const isCurrentlyFavorite = favoriteWaterIds.includes(waterId);
 
-      // 2. Синхронізуємо AppShell (щоб енциклопедія теж бачила актуальний стан)
-      // toggleFavorite в AppShell просто перемикає id в масиві
-      // Але щоб не дублювати логіку, оновлюємо через updateUser напряму
-      if (user) {
-        updateUser({ ...user, favoriteWaters: newFavorites });
-      }
+      // 1. Оновлюємо AppShell оптимістично (toggleFavorite сам перемикає стан)
+      toggleFavorite(waterId);
 
-      // 3. Синхронізуємо з БД
+      // 2. Синхронізуємо з БД
       const token = getToken();
-      if (!token) return;
+      if (!token) {
+        pendingRef.current.delete(waterId);
+        return;
+      }
 
       try {
         if (isCurrentlyFavorite) {
@@ -340,14 +329,14 @@ export default function ProfilePageContent() {
           if (!res.ok) throw new Error("POST failed");
         }
       } catch (_) {
-        // Відкат при помилці
-        setLocalFavorites(localFavorites);
-        if (user) updateUser({ ...user, favoriteWaters: localFavorites });
+        // Відкат: повертаємо попередній стан через toggleFavorite
+        toggleFavorite(waterId);
         showToast("Помилка збереження улюбленого", "error");
+      } finally {
+        pendingRef.current.delete(waterId);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [localFavorites, user, updateUser]
+    [favoriteWaterIds, toggleFavorite]
   );
 
   // ── Завантаження аватара ──────────────────────────────────────────────────
@@ -422,8 +411,8 @@ export default function ProfilePageContent() {
     waterType: w.waterType || "",
   }));
 
-  // Використовуємо localFavorites замість favoriteWaterIds з AppShell
-  const favoriteWaters = waterCards.filter((w) => localFavorites.includes(w.id));
+  // Використовуємо favoriteWaterIds з AppShell — єдине джерело правди
+  const favoriteWaters = waterCards.filter((w) => favoriteWaterIds.includes(w.id));
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 dark:bg-slate-950">
@@ -598,7 +587,7 @@ export default function ProfilePageContent() {
             <p className="py-8 text-center text-slate-500">Водойм не знайдено</p>
           ) : (
             waterCards.map((water) => {
-              const isFav = localFavorites.includes(water.id);
+              const isFav = favoriteWaterIds.includes(water.id);
               return (
                 <button
                   key={water.id}
