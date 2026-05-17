@@ -256,11 +256,7 @@ export default function MapExplorer() {
     }
   }, [selectedSpot, mapInstance]);
 
-  // ============================================================
-  // ВИПРАВЛЕННЯ: використовуємо безкоштовні тайли OpenStreetMap
-  // ============================================================
-  // Для світлої теми - стандартні OSM тайли
-  // Для темної теми - CartoDB Dark Matter (безкоштовний)
+  // Використовуємо безкоштовні тайли OpenStreetMap + CartoDB
   const tileLayerUrl = theme === "dark"
     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
     : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -337,7 +333,6 @@ export default function MapExplorer() {
               />
             </div>
 
-            {/* Повзунок відстані */}
             <div className="mt-4">
               <div className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2">
                 <Sliders className="h-4 w-4" />
@@ -389,38 +384,35 @@ export default function MapExplorer() {
               </div>
             </div>
 
-            {/* Активна точка */}
-            if (selectedSpot) {
-              return (
-                <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
-                        Активна точка
-                      </p>
-                      <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">{selectedSpot.name}</h2>
-                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-4">{selectedSpot.description}</p>
-                    </div>
+            {selectedSpot && (
+              <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
+                      Активна точка
+                    </p>
+                    <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">{selectedSpot.name}</h2>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-4">{selectedSpot.description}</p>
                   </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {selectedSpot.fish.map((fish) => (
-                      <span key={fish} className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-900 dark:text-slate-200">
-                        {fish}
-                      </span>
-                    ))}
-                  </div>
-
-                  <Link
-                    href={`/wiki?water=${selectedSpot.id}`}
-                    className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
-                  >
-                    Деталі водойми
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
                 </div>
-              );
-            }
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {selectedSpot.fish.map((fish) => (
+                    <span key={fish} className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-900 dark:text-slate-200">
+                      {fish}
+                    </span>
+                  ))}
+                </div>
+
+                <Link
+                  href={`/wiki?water=${selectedSpot.id}`}
+                  className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  Деталі водойми
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </aside>
 
           <div className="relative isolate min-h-[38rem] overflow-hidden bg-sky-50 lg:min-h-[44rem] dark:bg-slate-950">
@@ -437,7 +429,6 @@ export default function MapExplorer() {
                   url={tileLayerUrl}
                 />
                 
-                {/* Показуємо всі відфільтровані точки */}
                 {filteredSpots.map((spot) => (
                   <Marker
                     key={spot.id}
@@ -466,7 +457,6 @@ export default function MapExplorer() {
 
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.06),rgba(15,23,42,0))] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.16),rgba(2,6,23,0))]" />
 
-            {/* Надпис зліва зверху */}
             <div className="absolute left-5 top-5 z-[600] max-w-sm rounded-3xl border border-white/70 bg-white/90 p-4 shadow-lg backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/90">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">{copy.map.mapTitle}</p>
               <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">
