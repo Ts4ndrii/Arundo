@@ -179,10 +179,21 @@ export function Header({
     setSearchQuery("");
     setSearchResults([]);
     
-    if (result.type === "water") {
-      router.push(`/wiki?water=${result.id}`);
+    // Використовуємо router.push з повним перезавантаженням через window.location для wiki
+    if (pathname === "/wiki") {
+      // Якщо ми вже на wiki, використовуємо window.location для примусового оновлення
+      if (result.type === "water") {
+        window.location.href = `/wiki?water=${result.id}`;
+      } else {
+        window.location.href = `/wiki?fish=${result.id}`;
+      }
     } else {
-      router.push(`/wiki?fish=${result.id}`);
+      // Якщо на іншій сторінці, використовуємо звичайний router
+      if (result.type === "water") {
+        router.push(`/wiki?water=${result.id}`);
+      } else {
+        router.push(`/wiki?fish=${result.id}`);
+      }
     }
   };
 
