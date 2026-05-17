@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   AlertCircle,
-  Bell,
   Check,
   Eye,
   EyeOff,
@@ -54,7 +53,6 @@ type ModalState =
 type AppSettings = {
   theme: ThemeMode;
   language: LanguageCode;
-  notificationsEnabled: boolean;
 };
 
 type AppUIContextValue = {
@@ -82,7 +80,6 @@ const AppUIContext = createContext<AppUIContextValue | null>(null);
 const defaultSettings: AppSettings = {
   theme: "light",
   language: "uk",
-  notificationsEnabled: true,
 };
 
 const catchesStorageKey = "arundo-catches";
@@ -136,11 +133,11 @@ const languageOptions: Array<{
   code: LanguageCode;
   label: string;
   nativeLabel: string;
-  region: string;
+  available: boolean;
 }> = [
-  { code: "uk", label: "Ukrainian", nativeLabel: "Українська", region: "Україна" },
-  { code: "en", label: "English", nativeLabel: "English", region: "United States" },
-  { code: "pl", label: "Polish", nativeLabel: "Polski", region: "Polska" },
+  { code: "uk", label: "Ukrainian", nativeLabel: "Українська", available: true },
+  { code: "en", label: "English", nativeLabel: "English", available: false },
+  { code: "pl", label: "Polish", nativeLabel: "Polski", available: false },
 ];
 
 const themeOptions: Array<{ value: ThemeMode; icon: typeof SunMedium }> = [
@@ -352,9 +349,7 @@ function AuthModal({
       });
       const data = await res.json();
       if (data.token && data.user) {
-        // ── Зберігаємо токен під єдиним ключем ──────────────
         localStorage.setItem(TOKEN_KEY, data.token);
-        // Видаляємо старий ключ якщо був
         localStorage.removeItem("adminToken");
         onComplete({
           name: data.user.name,
@@ -940,7 +935,6 @@ function SettingsModal({
   onThemeChange,
   onLanguageChange,
   copy,
-  onNotificationsChange,
   onClose,
   modalCopy,
 }: {
@@ -949,7 +943,6 @@ function SettingsModal({
   onThemeChange: (theme: ThemeMode) => void;
   onLanguageChange: (language: LanguageCode) => void;
   copy: ReturnType<typeof getUiCopy>;
-  onNotificationsChange: (value: boolean) => void;
   onClose: () => void;
   modalCopy: { closeSettings: string };
 }) {
@@ -973,6 +966,7 @@ function SettingsModal({
         >
           <X className="h-5 w-5" />
         </button>
+
         <div className="mx-auto flex max-w-xl flex-col items-center text-center">
           <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.3em] text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
             {copy.settings.badge}
@@ -981,8 +975,9 @@ function SettingsModal({
             {copy.settings.title}
           </h2>
         </div>
+
         <div className="mt-7 space-y-4">
-          {/* Theme */}
+          {/* ── Тема ── */}
           <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
             <div className="flex items-center gap-4">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800">
@@ -1039,7 +1034,7 @@ function SettingsModal({
             </div>
           </section>
 
-          {/* Language */}
+          {/* ── Мова ── */}
           <section className="rounded-[28px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <div className="flex items-center gap-4">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100">
@@ -1055,16 +1050,19 @@ function SettingsModal({
               </div>
             </div>
             <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-950/60">
-              <div className="max-h-56 space-y-2 overflow-y-auto pr-1 modal-scrollbar">
+              <div className="space-y-2">
                 {languageOptions.map((option) => {
                   const isActive = selectedLanguage.code === option.code;
                   return (
                     <button
                       key={option.code}
                       type="button"
-                      onClick={() => onLanguageChange(option.code)}
+                      disabled={!option.available}
+                      onClick={() => option.available && onLanguageChange(option.code)}
                       className={`flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left transition ${
-                        isActive
+                        !option.available
+                          ? "cursor-not-allowed opacity-50 bg-white dark:bg-slate-900"
+                          : isActive
                           ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
                           : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                       }`}
@@ -1073,50 +1071,23 @@ function SettingsModal({
                         <span className="block text-sm font-semibold">
                           {option.nativeLabel}
                         </span>
+                        {!option.available && (
+                          <span className="block text-xs text-slate-400 dark:text-slate-500">
+                            У розробці
+                          </span>
+                        )}
                       </span>
-                      {isActive ? (
-                        <Check className="h-4 w-4 shrink-0" />
-                      ) : (
-                        <span className="h-4 w-4 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" />
-                      )}
+                      {option.available ? (
+                        isActive ? (
+                          <Check className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <span className="h-4 w-4 shrink-0 rounded-full border border-slate-300 dark:border-slate-600" />
+                        )
+                      ) : null}
                     </button>
                   );
                 })}
               </div>
-            </div>
-          </section>
-
-          {/* Notifications */}
-          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <div className="flex items-center gap-4">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-800">
-                <Bell className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
-                  {copy.settings.notificationsTitle}
-                </p>
-                <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">
-                  {copy.settings.notificationsCardTitle}
-                </h3>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={settings.notificationsEnabled}
-                onClick={() => onNotificationsChange(!settings.notificationsEnabled)}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full border p-1 transition ${
-                  settings.notificationsEnabled
-                    ? "border-blue-500 bg-blue-500/10"
-                    : "border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
-                }`}
-              >
-                <span
-                  className={`h-6 w-6 rounded-full bg-white shadow transition-transform ${
-                    settings.notificationsEnabled ? "translate-x-6" : "translate-x-0"
-                  }`}
-                />
-              </button>
             </div>
           </section>
         </div>
@@ -1228,12 +1199,10 @@ function AppShell({ children }: { children: ReactNode }) {
           setFavoriteWaterIds(fixedUser.favoriteWaters || []);
           localStorage.setItem("arundo-user", JSON.stringify(fixedUser));
         } else {
-          // Токен невалідний — чистимо
           localStorage.removeItem(TOKEN_KEY);
           localStorage.removeItem("arundo-user");
         }
       } catch {
-        // Сервер недоступний — намагаємось із кешу
         const stored = localStorage.getItem("arundo-user");
         if (stored) {
           try {
@@ -1276,13 +1245,9 @@ function AppShell({ children }: { children: ReactNode }) {
         const parsed = JSON.parse(stored);
         setSettings({
           theme: parsed.theme === "dark" ? "dark" : defaultSettings.theme,
-          language: languageOptions.some((o) => o.code === parsed.language)
+          language: languageOptions.some((o) => o.code === parsed.language && o.available)
             ? parsed.language
             : defaultSettings.language,
-          notificationsEnabled:
-            typeof parsed.notificationsEnabled === "boolean"
-              ? parsed.notificationsEnabled
-              : defaultSettings.notificationsEnabled,
         });
       }
     } catch {}
@@ -1298,7 +1263,7 @@ function AppShell({ children }: { children: ReactNode }) {
     document.documentElement.lang = settings.language;
   }, [settings, settingsLoaded]);
 
-  // ── Улови (localStorage — для зворотньої сумісності) ─────────
+  // ── Улови ─────────────────────────────────────────────────────
   useEffect(() => {
     try {
       const stored = localStorage.getItem(catchesStorageKey);
@@ -1455,9 +1420,6 @@ function AppShell({ children }: { children: ReactNode }) {
         copy={copy}
         onThemeChange={(theme) => setSettings((s) => ({ ...s, theme }))}
         onLanguageChange={(language) => setSettings((s) => ({ ...s, language }))}
-        onNotificationsChange={(enabled) =>
-          setSettings((s) => ({ ...s, notificationsEnabled: enabled }))
-        }
         onClose={closeModal}
         modalCopy={modalCopy}
       />
