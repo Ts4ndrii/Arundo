@@ -111,6 +111,7 @@ function MapFocus({ center }: { center: LatLngExpression }) {
   return null;
 }
 
+// ── ВИПРАВЛЕНО: додано dark-класи до SpotPill ──────────────────
 function SpotPill({
   spot,
   active,
@@ -129,34 +130,43 @@ function SpotPill({
       className={[
         "group flex w-full items-start gap-3 rounded-3xl border p-4 text-left transition",
         active
-          ? "border-blue-200 bg-blue-50/80 shadow-sm"
-          : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm",
+          ? "border-blue-200 bg-blue-50/80 dark:border-blue-500/40 dark:bg-blue-500/10"
+          : "border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-500/40 dark:hover:bg-slate-700",
       ].join(" ")}
     >
       <span
         className={[
           "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-sm font-bold transition",
-          active ? "border-blue-200 bg-white text-blue-600" : "border-slate-200 bg-slate-50 text-slate-500",
+          active
+            ? "border-blue-200 bg-white text-blue-600 dark:border-blue-500/40 dark:bg-slate-900 dark:text-blue-400"
+            : "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-400",
         ].join(" ")}
       >
         <MapPinned className="h-5 w-5" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-slate-900">{spot.name}</span>
-        <span className="block text-xs text-slate-500">{spot.place}</span>
-        {showDistance ? <span className="mt-1 block text-xs text-blue-600">{spot.distance}</span> : null}
+        <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{spot.name}</span>
+        <span className="block text-xs text-slate-500 dark:text-slate-400">{spot.place}</span>
+        {showDistance ? (
+          <span className="mt-1 block text-xs text-blue-600 dark:text-blue-400">{spot.distance}</span>
+        ) : null}
         <span className="mt-2 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
           {spot.fish.slice(0, 3).map((fish) => (
-            <span key={fish} className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+            <span
+              key={fish}
+              className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+            >
               {fish}
             </span>
           ))}
           {spot.fish.length > 3 && (
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500">+{spot.fish.length - 3}</span>
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+              +{spot.fish.length - 3}
+            </span>
           )}
         </span>
       </span>
-      <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-blue-600" />
+      <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-blue-600 dark:text-slate-500 dark:group-hover:text-blue-400" />
     </button>
   );
 }
@@ -165,7 +175,7 @@ export default function MapExplorer() {
   const { theme, language } = useAppUI();
   const searchParams = useSearchParams();
   const copy = getUiCopy(language);
-  
+
   const [waterBodies, setWaterBodies] = useState<WaterBody[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
@@ -177,7 +187,6 @@ export default function MapExplorer() {
   const [maxDistance, setMaxDistance] = useState(500);
   const [allSpots, setAllSpots] = useState<WaterSpot[]>([]);
 
-  // Завантаження даних з API
   useEffect(() => {
     const fetchWaterBodies = async () => {
       try {
@@ -194,12 +203,10 @@ export default function MapExplorer() {
     fetchWaterBodies();
   }, []);
 
-  // Конвертація водойм у формат для карти
   const fishingSpots: WaterSpot[] = useMemo(() => {
     return waterBodies.map((water) => {
       const [lng, lat] = water.location.coordinates;
       const center: LatLngExpression = [lat, lng];
-      
       return {
         id: water._id,
         name: water.name,
@@ -218,14 +225,9 @@ export default function MapExplorer() {
     setAllSpots(fishingSpots);
   }, [fishingSpots]);
 
-  // Фільтрація водойм за відстанню
   const filteredSpots = useMemo(() => {
     const center = nearbyCenter ?? (userLocation ? (userLocation as [number, number]) : null);
-    
-    if (!center) {
-      return allSpots;
-    }
-
+    if (!center) return allSpots;
     return allSpots
       .map((spot) => ({
         ...spot,
@@ -239,24 +241,19 @@ export default function MapExplorer() {
       }));
   }, [allSpots, nearbyCenter, userLocation, maxDistance]);
 
-  // Відображення водойм в сайдбарі
-  const nearbySpots = useMemo(() => {
-    return filteredSpots.slice(0, 15);
-  }, [filteredSpots]);
+  const nearbySpots = useMemo(() => filteredSpots.slice(0, 15), [filteredSpots]);
 
   const selectedSpot = useMemo(() => {
     if (!selectedSpotId) return null;
     return filteredSpots.find((spot) => spot.id === selectedSpotId) ?? null;
   }, [selectedSpotId, filteredSpots]);
 
-  // Автоматичний flyTo при виборі точки
   useEffect(() => {
     if (selectedSpot && mapInstance) {
       mapInstance.flyTo(selectedSpot.center, 12, { duration: 0.8 });
     }
   }, [selectedSpot, mapInstance]);
 
-  // Використовуємо безкоштовні тайли OpenStreetMap + CartoDB
   const tileLayerUrl = theme === "dark"
     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
     : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -270,14 +267,11 @@ export default function MapExplorer() {
       setLocationMessage(copy.map.locationUnsupported);
       return;
     }
-
     setLocationMessage(copy.map.locationReady);
     setIsLocating(true);
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const nextLocation: LatLngExpression = [position.coords.latitude, position.coords.longitude];
-
         setUserLocation(nextLocation);
         setNearbyCenter([position.coords.latitude, position.coords.longitude]);
         setLocationMessage(copy.map.locationSuccess);
@@ -289,11 +283,7 @@ export default function MapExplorer() {
         setNearbyCenter([49.8397, 24.0297]);
         setLocationMessage(copy.map.locationDenied);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 30000,
-      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
     );
   };
 
@@ -302,7 +292,7 @@ export default function MapExplorer() {
       <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
         <div className="flex h-96 items-center justify-center">
           <div className="text-center">
-            <div className="text-lg text-slate-600">Завантаження карти...</div>
+            <div className="text-lg text-slate-600 dark:text-slate-400">Завантаження карти...</div>
           </div>
         </div>
       </main>
@@ -312,7 +302,9 @@ export default function MapExplorer() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-6 transition-colors duration-200 sm:px-6 lg:px-8 lg:py-8 dark:bg-slate-950">
       <section className="max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.35em] text-blue-600 dark:text-blue-300">{copy.map.label}</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.35em] text-blue-600 dark:text-blue-300">
+          {copy.map.label}
+        </p>
         <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl dark:text-slate-100">
           {copy.map.title}
         </h1>
@@ -323,22 +315,25 @@ export default function MapExplorer() {
 
       <section className="mt-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft dark:border-slate-800 dark:bg-slate-900">
         <div className="grid min-h-[44rem] lg:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="border-b border-slate-200 p-5 lg:border-b-0 lg:border-r dark:border-slate-800">
+          {/* ── Sidebar ── */}
+          <aside className="border-b border-slate-200 p-5 lg:border-b-0 lg:border-r dark:border-slate-800 dark:bg-slate-900">
+            {/* Search */}
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <input
                 type="search"
                 placeholder={copy.map.searchPlaceholder}
-                className="h-14 w-full rounded-full border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
+                className="h-14 w-full rounded-full border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-700"
               />
             </div>
 
+            {/* Distance filter */}
             <div className="mt-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 mb-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
                 <Sliders className="h-4 w-4" />
                 <span>Фільтр за відстанню: до {maxDistance} км</span>
               </div>
-              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+              <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800">
                 <input
                   type="range"
                   min="10"
@@ -346,28 +341,29 @@ export default function MapExplorer() {
                   step="10"
                   value={maxDistance}
                   onChange={(e) => setMaxDistance(Number(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-700"
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer dark:bg-slate-600"
                 />
-                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 mt-1">
                   <span>10 км</span>
                   <span>100 км</span>
                   <span>300 км</span>
                   <span>500 км</span>
                 </div>
-                <div className="text-xs text-slate-500 mt-2 text-center">
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
                   Знайдено: {filteredSpots.length} водойм
                 </div>
               </div>
             </div>
 
+            {/* Spots list */}
             <div className="mt-4 space-y-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-300">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                 Водойми в межах {maxDistance} км
               </div>
-              
+
               <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                 {nearbySpots.length === 0 ? (
-                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
                     Немає водойм в межах {maxDistance} км
                   </div>
                 ) : (
@@ -384,21 +380,29 @@ export default function MapExplorer() {
               </div>
             </div>
 
+            {/* Selected spot info */}
             {selectedSpot && (
-              <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/70">
+              <div className="mt-5 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-400">
                       Активна точка
                     </p>
-                    <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">{selectedSpot.name}</h2>
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-4">{selectedSpot.description}</p>
+                    <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">
+                      {selectedSpot.name}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 line-clamp-4">
+                      {selectedSpot.description}
+                    </p>
                   </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {selectedSpot.fish.map((fish) => (
-                    <span key={fish} className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-900 dark:text-slate-200">
+                    <span
+                      key={fish}
+                      className="rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-700 dark:text-slate-200"
+                    >
                       {fish}
                     </span>
                   ))}
@@ -415,6 +419,7 @@ export default function MapExplorer() {
             )}
           </aside>
 
+          {/* ── Map ── */}
           <div className="relative isolate min-h-[38rem] overflow-hidden bg-sky-50 lg:min-h-[44rem] dark:bg-slate-950">
             {fishingSpots.length > 0 ? (
               <MapContainer
@@ -424,11 +429,7 @@ export default function MapExplorer() {
                 className="h-full w-full"
                 ref={setMapInstance}
               >
-                <TileLayer
-                  attribution={tileLayerAttribution}
-                  url={tileLayerUrl}
-                />
-                
+                <TileLayer attribution={tileLayerAttribution} url={tileLayerUrl} />
                 {filteredSpots.map((spot) => (
                   <Marker
                     key={spot.id}
@@ -437,7 +438,6 @@ export default function MapExplorer() {
                     eventHandlers={{ click: () => setSelectedSpotId(spot.id) }}
                   />
                 ))}
-
                 {userLocation ? (
                   <Marker position={userLocation} icon={createLocationIcon()}>
                     <Popup>
@@ -451,34 +451,40 @@ export default function MapExplorer() {
               </MapContainer>
             ) : (
               <div className="flex h-full items-center justify-center">
-                <div className="text-center text-slate-500">Немає даних для відображення</div>
+                <div className="text-center text-slate-500 dark:text-slate-400">Немає даних для відображення</div>
               </div>
             )}
 
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.06),rgba(15,23,42,0))] dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.16),rgba(2,6,23,0))]" />
 
+            {/* Info overlay */}
             <div className="absolute left-5 top-5 z-[600] max-w-sm rounded-3xl border border-white/70 bg-white/90 p-4 shadow-lg backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/90">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">{copy.map.mapTitle}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-400">
+                {copy.map.mapTitle}
+              </p>
               <h2 className="mt-2 text-xl font-black text-slate-900 dark:text-slate-100">
                 {selectedSpot?.name || "Виберіть водойму"}
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300 line-clamp-3">
                 {selectedSpot?.description || "Натисніть на маркер на карті або виберіть водойму зі списку"}
               </p>
-
               {selectedSpot && (
                 <>
                   <div className="mt-3 flex flex-wrap gap-1">
                     {selectedSpot.fish.slice(0, 4).map((fish) => (
-                      <span key={fish} className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      <span
+                        key={fish}
+                        className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      >
                         {fish}
                       </span>
                     ))}
                     {selectedSpot.fish.length > 4 && (
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500">+{selectedSpot.fish.length - 4}</span>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        +{selectedSpot.fish.length - 4}
+                      </span>
                     )}
                   </div>
-
                   <Link
                     href={`/wiki?water=${selectedSpot.id}`}
                     className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-blue-600 px-3 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -488,7 +494,6 @@ export default function MapExplorer() {
                   </Link>
                 </>
               )}
-
               {locationMessage && (
                 <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
                   {locationMessage}
@@ -496,10 +501,12 @@ export default function MapExplorer() {
               )}
             </div>
 
+            {/* Hint */}
             <div className="absolute left-5 bottom-5 z-[600] rounded-full border border-white/70 bg-white/90 px-4 py-3 text-sm font-medium text-slate-700 shadow-lg backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200">
               {copy.map.hint}
             </div>
 
+            {/* Zoom controls */}
             <div className="absolute right-5 top-5 z-[600] flex flex-col gap-2">
               <button
                 type="button"

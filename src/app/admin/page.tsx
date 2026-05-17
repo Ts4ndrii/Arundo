@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAppUI } from '@/components/AppShell';
 // ── ВИПРАВЛЕННЯ: імпортуємо єдиний ключ токена з AppShell ──
 import { TOKEN_KEY } from '@/components/AppShell';
 
@@ -102,32 +103,76 @@ const COORD_MODES = [
   { id: 'map',    label: 'На карті', icon: <MapIcon key="map-icon" /> },
 ];
 
+// ─── useThemeVars — генерує CSS-змінні для поточної теми ──────
+function useThemeVars(theme: string) {
+  const isDark = theme === 'dark';
+  return {
+    // Backgrounds
+    bg:        isDark ? '#0f172a' : '#f8fafc',
+    bgCard:    isDark ? '#1e293b' : '#ffffff',
+    bgSub:     isDark ? '#0f172a' : '#f8fafc',
+    bgInput:   isDark ? '#0f172a' : '#ffffff',
+    bgHover:   isDark ? '#334155' : '#f1f5f9',
+    bgChip:    isDark ? '#1e3a5f' : '#eff6ff',
+    bgTag:     isDark ? '#1e3a5f' : '#eff6ff',
+    bgSuccess: isDark ? '#052e16' : '#f0fdf4',
+    bgWarn:    isDark ? '#1c1917' : '#fff7ed',
+    bgInfo:    isDark ? '#172554' : '#eff6ff',
+
+    // Borders
+    border:        isDark ? '#334155' : '#e2e8f0',
+    borderFocus:   '#2563eb',
+    borderSuccess: isDark ? '#166534' : '#bbf7d0',
+    borderWarn:    isDark ? '#431407' : '#fed7aa',
+    borderInfo:    isDark ? '#1e3a8a' : '#bfdbfe',
+
+    // Text
+    text:        isDark ? '#f1f5f9' : '#1e293b',
+    textMuted:   isDark ? '#94a3b8' : '#64748b',
+    textSubtle:  isDark ? '#64748b' : '#94a3b8',
+    textSuccess: isDark ? '#4ade80' : '#059669',
+    textWarn:    isDark ? '#fb923c' : '#ea580c',
+    textInfo:    isDark ? '#60a5fa' : '#2563eb',
+    textChip:    isDark ? '#93c5fd' : '#1d4ed8',
+    textTag:     isDark ? '#93c5fd' : '#2563eb',
+
+    // Nav
+    navBg:     isDark ? '#1e293b' : '#ffffff',
+    navBorder: isDark ? '#334155' : '#e2e8f0',
+
+    // Row hover
+    rowBorder:      isDark ? '#334155' : '#f1f5f9',
+    rowBorderHover: isDark ? '#3b82f6' : '#dbeafe',
+    rowBgHover:     isDark ? '#1e293b' : '#f8fafc',
+  };
+}
+
 // ─── Toast ────────────────────────────────────────────────────
-function Toast({ message, type, onClose }: { message: string; type: string; onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 3800); return () => clearTimeout(t); }, [onClose]);
+function Toast({ message, type, onClose, t }: { message: string; type: string; onClose: () => void; t: ReturnType<typeof useThemeVars> }) {
+  useEffect(() => { const timer = setTimeout(onClose, 3800); return () => clearTimeout(timer); }, [onClose]);
   const cfg: Record<string, any> = {
-    success: { bg: '#f0fdf4', border: '#bbf7d0', accent: '#059669', icon: <CheckIcon /> },
+    success: { bg: t.bgSuccess, border: t.borderSuccess, accent: t.textSuccess, icon: <CheckIcon /> },
     error:   { bg: '#fef2f2', border: '#fecaca', accent: '#dc2626', icon: '!' },
-    info:    { bg: '#eff6ff', border: '#bfdbfe', accent: '#2563eb', icon: 'i' },
+    info:    { bg: t.bgInfo,    border: t.borderInfo,    accent: t.textInfo,    icon: 'i' },
   };
   const c = cfg[type] || cfg.info;
   return (
-    <div style={{ position:'fixed', bottom:24, right:24, zIndex:9999, background:c.bg, border:`1px solid ${c.border}`, borderLeft:`3px solid ${c.accent}`, borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:10, boxShadow:'0 6px 24px rgba(0,0,0,0.09)', animation:'toastIn 0.22s ease', maxWidth:340, fontSize:13.5, fontWeight:500, color:'#1e293b' }}>
+    <div style={{ position:'fixed', bottom:24, right:24, zIndex:9999, background:c.bg, border:`1px solid ${c.border}`, borderLeft:`3px solid ${c.accent}`, borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:10, boxShadow:'0 6px 24px rgba(0,0,0,0.18)', animation:'toastIn 0.22s ease', maxWidth:340, fontSize:13.5, fontWeight:500, color:t.text }}>
       <span style={{ color:c.accent, display:'flex', flexShrink:0 }}>{c.icon}</span>
       <span style={{ flex:1 }}>{message}</span>
-      <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:2, display:'flex' }}><XIcon /></button>
+      <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:t.textMuted, padding:2, display:'flex' }}><XIcon /></button>
     </div>
   );
 }
 
 // ─── Confirm Modal ────────────────────────────────────────────
-function ConfirmModal({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
+function ConfirmModal({ message, onConfirm, onCancel, t }: { message: string; onConfirm: () => void; onCancel: () => void; t: ReturnType<typeof useThemeVars> }) {
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:9998, background:'rgba(15,23,42,0.5)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(4px)' }}>
-      <div style={{ background:'white', borderRadius:18, padding:28, maxWidth:360, width:'90%', boxShadow:'0 20px 60px rgba(0,0,0,0.2)', animation:'fadeUp 0.2s ease' }}>
-        <div style={{ fontSize:15, fontWeight:600, color:'#0f172a', marginBottom:20, lineHeight:1.5 }}>{message}</div>
+    <div style={{ position:'fixed', inset:0, zIndex:9998, background:'rgba(15,23,42,0.7)', display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(4px)' }}>
+      <div style={{ background:t.bgCard, borderRadius:18, padding:28, maxWidth:360, width:'90%', boxShadow:'0 20px 60px rgba(0,0,0,0.4)', animation:'fadeUp 0.2s ease', border:`1px solid ${t.border}` }}>
+        <div style={{ fontSize:15, fontWeight:600, color:t.text, marginBottom:20, lineHeight:1.5 }}>{message}</div>
         <div style={{ display:'flex', gap:10 }}>
-          <button onClick={onCancel} style={{ flex:1, padding:'10px', borderRadius:10, border:'1px solid #e2e8f0', background:'white', cursor:'pointer', fontSize:14, color:'#64748b', fontWeight:500, fontFamily:'inherit' }}>Скасувати</button>
+          <button onClick={onCancel} style={{ flex:1, padding:'10px', borderRadius:10, border:`1px solid ${t.border}`, background:t.bgCard, cursor:'pointer', fontSize:14, color:t.textMuted, fontWeight:500, fontFamily:'inherit' }}>Скасувати</button>
           <button onClick={onConfirm} style={{ flex:1, padding:'10px', borderRadius:10, border:'none', background:'#ef4444', cursor:'pointer', fontSize:14, color:'white', fontWeight:600, fontFamily:'inherit' }}>Видалити</button>
         </div>
       </div>
@@ -198,7 +243,7 @@ function MapPicker({ lat, lng, onSelect }: { lat: string; lng: string; onSelect:
 }
 
 // ─── Image drop zone ───────────────────────────────────────────
-function ImageZone({ files, onChange, multiple = true, label }: { files: File[]; onChange: (f: File[]) => void; multiple?: boolean; label?: string }) {
+function ImageZone({ files, onChange, multiple = true, label, t }: { files: File[]; onChange: (f: File[]) => void; multiple?: boolean; label?: string; t: ReturnType<typeof useThemeVars> }) {
   const ref = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
   const add = (fs: FileList | null) => {
@@ -208,20 +253,20 @@ function ImageZone({ files, onChange, multiple = true, label }: { files: File[];
   };
   return (
     <div>
-      {label && <div style={{ fontSize:12, fontWeight:600, color:'#64748b', marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>{label}</div>}
+      {label && <div style={{ fontSize:12, fontWeight:600, color:t.textMuted, marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>{label}</div>}
       <div onClick={() => ref.current?.click()} onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
         onDrop={e => { e.preventDefault(); setDrag(false); add(e.dataTransfer.files); }}
-        style={{ border:`2px dashed ${drag ? '#2563eb' : '#cbd5e1'}`, borderRadius:11, padding:'20px 16px', textAlign:'center', cursor:'pointer', background: drag ? '#eff6ff' : '#f8fafc', transition:'all 0.15s' }}>
-        <div style={{ color: drag ? '#2563eb' : '#94a3b8', display:'flex', justifyContent:'center', marginBottom:5 }}><UploadIcon /></div>
-        <div style={{ fontSize:13, fontWeight:500, color:'#64748b' }}>Перетягніть або клікніть</div>
-        <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>JPG, PNG, WebP · до 10 MB</div>
+        style={{ border:`2px dashed ${drag ? '#2563eb' : t.border}`, borderRadius:11, padding:'20px 16px', textAlign:'center', cursor:'pointer', background: drag ? t.bgInfo : t.bgSub, transition:'all 0.15s' }}>
+        <div style={{ color: drag ? '#2563eb' : t.textMuted, display:'flex', justifyContent:'center', marginBottom:5 }}><UploadIcon /></div>
+        <div style={{ fontSize:13, fontWeight:500, color:t.textMuted }}>Перетягніть або клікніть</div>
+        <div style={{ fontSize:11, color:t.textSubtle, marginTop:2 }}>JPG, PNG, WebP · до 10 MB</div>
         <input ref={ref} type="file" accept="image/*" multiple={multiple} onChange={e => add(e.target.files)} style={{ display:'none' }} />
       </div>
       {files.length > 0 && (
         <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:10 }}>
           {files.map((f, i) => (
             <div key={i} style={{ position:'relative' }}>
-              <img src={URL.createObjectURL(f)} alt="" style={{ width:64, height:64, objectFit:'cover', borderRadius:9, border:'1px solid #e2e8f0', display:'block' }} />
+              <img src={URL.createObjectURL(f)} alt="" style={{ width:64, height:64, objectFit:'cover', borderRadius:9, border:`1px solid ${t.border}`, display:'block' }} />
               <button onClick={e => { e.stopPropagation(); const n = [...files]; n.splice(i, 1); onChange(n); }} style={{ position:'absolute', top:-5, right:-5, background:'#ef4444', border:'2px solid white', borderRadius:'50%', width:18, height:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'white' }}><XIcon /></button>
             </div>
           ))}
@@ -232,17 +277,17 @@ function ImageZone({ files, onChange, multiple = true, label }: { files: File[];
 }
 
 // ─── Existing images ───────────────────────────────────────────
-function ExistingImages({ images, toRemove, onToggleRemove, label }: { images: any[]; toRemove: string[]; onToggleRemove: (id: string) => void; label?: string }) {
+function ExistingImages({ images, toRemove, onToggleRemove, label, t }: { images: any[]; toRemove: string[]; onToggleRemove: (id: string) => void; label?: string; t: ReturnType<typeof useThemeVars> }) {
   if (!images || images.length === 0) return null;
   return (
     <div>
-      {label && <div style={{ fontSize:12, fontWeight:600, color:'#64748b', marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>{label}</div>}
+      {label && <div style={{ fontSize:12, fontWeight:600, color:t.textMuted, marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>{label}</div>}
       <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
         {images.map((img: any, i: number) => {
           const removing = toRemove.includes(img.publicId);
           return (
             <div key={i} style={{ position:'relative' }}>
-              <img src={img.url} alt="" style={{ width:64, height:64, objectFit:'cover', borderRadius:9, border:`2px solid ${removing ? '#ef4444' : '#e2e8f0'}`, display:'block', opacity: removing ? 0.4 : 1, transition:'all 0.15s' }} />
+              <img src={img.url} alt="" style={{ width:64, height:64, objectFit:'cover', borderRadius:9, border:`2px solid ${removing ? '#ef4444' : t.border}`, display:'block', opacity: removing ? 0.4 : 1, transition:'all 0.15s' }} />
               <button onClick={() => onToggleRemove(img.publicId)}
                 style={{ position:'absolute', top:-5, right:-5, background: removing ? '#94a3b8' : '#ef4444', border:'2px solid white', borderRadius:'50%', width:18, height:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'white', transition:'all 0.15s' }}>
                 {removing ? <PlusIcon /> : <XIcon />}
@@ -258,29 +303,33 @@ function ExistingImages({ images, toRemove, onToggleRemove, label }: { images: a
 }
 
 // ─── Field wrapper ─────────────────────────────────────────────
-function Field({ label, required, children, hint }: { label?: string; required?: boolean; children: React.ReactNode; hint?: string }) {
+function Field({ label, required, children, hint, t }: { label?: string; required?: boolean; children: React.ReactNode; hint?: string; t: ReturnType<typeof useThemeVars> }) {
   return (
     <div>
-      {label && <div style={{ fontSize:12, fontWeight:600, color:'#64748b', marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>
+      {label && <div style={{ fontSize:12, fontWeight:600, color:t.textMuted, marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>
         {label}{required && <span style={{ color:'#ef4444', marginLeft:2 }}>*</span>}
       </div>}
       {children}
-      {hint && <div style={{ fontSize:11, color:'#94a3b8', marginTop:4 }}>{hint}</div>}
+      {hint && <div style={{ fontSize:11, color:t.textSubtle, marginTop:4 }}>{hint}</div>}
     </div>
   );
 }
 
-const IS: React.CSSProperties = { width:'100%', border:'1px solid #e2e8f0', borderRadius:10, padding:'10px 14px', fontSize:14, color:'#1e293b', background:'white', outline:'none', boxSizing:'border-box', transition:'border-color 0.15s, box-shadow 0.15s', fontFamily:'inherit' };
+function makeIS(t: ReturnType<typeof useThemeVars>): React.CSSProperties {
+  return { width:'100%', border:`1px solid ${t.border}`, borderRadius:10, padding:'10px 14px', fontSize:14, color:t.text, background:t.bgInput, outline:'none', boxSizing:'border-box', transition:'border-color 0.15s, box-shadow 0.15s', fontFamily:'inherit' };
+}
 
-function Inp({ as, style: sx, ...props }: any) {
+function Inp({ as, style: sx, t, ...props }: any) {
+  const IS = makeIS(t);
   const onF = (e: React.FocusEvent<any>) => { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)'; };
-  const onB = (e: React.FocusEvent<any>) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; };
+  const onB = (e: React.FocusEvent<any>) => { e.target.style.borderColor = t.border; e.target.style.boxShadow = 'none'; };
   return as === 'textarea'
     ? <textarea {...props} onFocus={onF} onBlur={onB} style={{ ...IS, resize:'vertical', minHeight:78, ...sx }} />
     : <input {...props} onFocus={onF} onBlur={onB} style={{ ...IS, ...sx }} />;
 }
 
-function Sel({ value, onChange, children, placeholder }: any) {
+function Sel({ value, onChange, children, placeholder, t }: any) {
+  const IS = makeIS(t);
   return (
     <select value={value} onChange={onChange}
       style={{ ...IS, appearance:'none', backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat:'no-repeat', backgroundPosition:'right 12px center', paddingRight:36, cursor:'pointer' }}>
@@ -290,17 +339,17 @@ function Sel({ value, onChange, children, placeholder }: any) {
   );
 }
 
-function ChipPicker({ label, options, value, onChange, colorScheme = 'blue' }: any) {
+function ChipPicker({ label, options, value, onChange, colorScheme = 'blue', t }: any) {
   const colors: Record<string, any> = {
-    blue:   { bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8', activeBg:'#2563eb', activeColor:'white' },
-    green:  { bg:'#f0fdf4', border:'#bbf7d0', color:'#065f46', activeBg:'#059669', activeColor:'white' },
-    orange: { bg:'#fff7ed', border:'#fed7aa', color:'#9a3412', activeBg:'#ea580c', activeColor:'white' },
-    purple: { bg:'#f5f3ff', border:'#ddd6fe', color:'#4c1d95', activeBg:'#7c3aed', activeColor:'white' },
+    blue:   { bg: t.bgChip,    border: t.borderInfo,    color: t.textChip, activeBg:'#2563eb', activeColor:'white' },
+    green:  { bg: t.bgSuccess, border: t.borderSuccess, color: t.textSuccess, activeBg:'#059669', activeColor:'white' },
+    orange: { bg: t.bgWarn,    border: t.borderWarn,    color: t.textWarn, activeBg:'#ea580c', activeColor:'white' },
+    purple: { bg: t.bgChip,    border: t.border,        color: t.textMuted, activeBg:'#7c3aed', activeColor:'white' },
   };
   const c = colors[colorScheme] || colors.blue;
   const toggle = (v: string) => onChange(value.includes(v) ? value.filter((x: string) => x !== v) : [...value, v]);
   return (
-    <Field label={label}>
+    <Field label={label} t={t}>
       <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
         {options.map((opt: any) => {
           const active = value.includes(opt.value || opt);
@@ -314,36 +363,36 @@ function ChipPicker({ label, options, value, onChange, colorScheme = 'blue' }: a
             </button>
           );
         })}
-        {options.length === 0 && <span style={{ fontSize:12, color:'#94a3b8' }}>Немає доступних опцій</span>}
+        {options.length === 0 && <span style={{ fontSize:12, color:t.textSubtle }}>Немає доступних опцій</span>}
       </div>
     </Field>
   );
 }
 
-function FishTagger({ value, onChange, allFish }: any) {
+function FishTagger({ value, onChange, allFish, t }: any) {
   const [txt, setTxt] = useState('');
   const [open, setOpen] = useState(false);
   const suggestions = allFish.map((f: any) => f.name).filter((n: string) => n.toLowerCase().includes(txt.toLowerCase()) && !value.includes(n)).slice(0, 6);
-  const add = (name: string) => { const t = name.trim(); if (t && !value.includes(t)) onChange([...value, t]); setTxt(''); setOpen(false); };
+  const add = (name: string) => { const tr = name.trim(); if (tr && !value.includes(tr)) onChange([...value, tr]); setTxt(''); setOpen(false); };
   return (
-    <Field label="Риби у водоймі">
+    <Field label="Риби у водоймі" t={t}>
       {value.length > 0 && (
         <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:8 }}>
           {value.map((n: string) => (
-            <span key={n} style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#eff6ff', border:'1px solid #bfdbfe', color:'#1d4ed8', borderRadius:20, padding:'3px 10px', fontSize:12.5, fontWeight:500 }}>
+            <span key={n} style={{ display:'inline-flex', alignItems:'center', gap:5, background:t.bgChip, border:`1px solid ${t.borderInfo}`, color:t.textChip, borderRadius:20, padding:'3px 10px', fontSize:12.5, fontWeight:500 }}>
               {n}
-              <button onClick={() => onChange(value.filter((v: string) => v !== n))} style={{ background:'none', border:'none', cursor:'pointer', color:'#60a5fa', padding:0, display:'flex', lineHeight:1 }}><XIcon /></button>
+              <button onClick={() => onChange(value.filter((v: string) => v !== n))} style={{ background:'none', border:'none', cursor:'pointer', color:t.textChip, padding:0, display:'flex', lineHeight:1 }}><XIcon /></button>
             </span>
           ))}
         </div>
       )}
       <div style={{ position:'relative' }}>
-        <Inp value={txt} onChange={(e: any) => { setTxt(e.target.value); setOpen(true); }} onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); if (txt.trim()) add(txt); } }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} placeholder="Назва риби + Enter…" />
+        <Inp value={txt} t={t} onChange={(e: any) => { setTxt(e.target.value); setOpen(true); }} onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); if (txt.trim()) add(txt); } }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} placeholder="Назва риби + Enter…" />
         {open && suggestions.length > 0 && (
-          <div style={{ position:'absolute', top:'100%', left:0, right:0, zIndex:50, background:'white', border:'1px solid #e2e8f0', borderRadius:11, marginTop:4, boxShadow:'0 6px 20px rgba(0,0,0,0.09)', overflow:'hidden' }}>
+          <div style={{ position:'absolute', top:'100%', left:0, right:0, zIndex:50, background:t.bgCard, border:`1px solid ${t.border}`, borderRadius:11, marginTop:4, boxShadow:'0 6px 20px rgba(0,0,0,0.18)', overflow:'hidden' }}>
             {suggestions.map((n: string) => (
-              <button key={n} onMouseDown={() => add(n)} style={{ display:'block', width:'100%', textAlign:'left', background:'none', border:'none', cursor:'pointer', padding:'9px 14px', color:'#334155', fontSize:13.5, transition:'background 0.1s', fontFamily:'inherit' }}
-                onMouseEnter={(e: any) => e.target.style.background = '#f1f5f9'} onMouseLeave={(e: any) => e.target.style.background = 'none'}
+              <button key={n} onMouseDown={() => add(n)} style={{ display:'block', width:'100%', textAlign:'left', background:'none', border:'none', cursor:'pointer', padding:'9px 14px', color:t.text, fontSize:13.5, transition:'background 0.1s', fontFamily:'inherit' }}
+                onMouseEnter={(e: any) => e.target.style.background = t.bgHover} onMouseLeave={(e: any) => e.target.style.background = 'none'}
               >{n}</button>
             ))}
           </div>
@@ -353,37 +402,38 @@ function FishTagger({ value, onChange, allFish }: any) {
   );
 }
 
-function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return <div style={{ background:'white', border:'1px solid #e2e8f0', borderRadius:18, padding:24, boxShadow:'0 1px 4px rgba(0,0,0,0.04)', ...style }}>{children}</div>;
+function Card({ children, style, t }: { children: React.ReactNode; style?: React.CSSProperties; t: ReturnType<typeof useThemeVars> }) {
+  return <div style={{ background:t.bgCard, border:`1px solid ${t.border}`, borderRadius:18, padding:24, boxShadow: t.bgCard === '#1e293b' ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.04)', ...style }}>{children}</div>;
 }
 
-function CardHead({ icon, iconBg, iconColor, title, sub }: any) {
+function CardHead({ icon, iconBg, iconColor, title, sub, t }: any) {
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:22, paddingBottom:18, borderBottom:'1px solid #f1f5f9' }}>
+    <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:22, paddingBottom:18, borderBottom:`1px solid ${t.border}` }}>
       <div style={{ width:36, height:36, borderRadius:10, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center', color:iconColor, flexShrink:0 }}>{icon}</div>
       <div>
-        <div style={{ fontWeight:700, fontSize:15, color:'#0f172a' }}>{title}</div>
-        {sub && <div style={{ fontSize:12, color:'#94a3b8', marginTop:1 }}>{sub}</div>}
+        <div style={{ fontWeight:700, fontSize:15, color:t.text }}>{title}</div>
+        {sub && <div style={{ fontSize:12, color:t.textSubtle, marginTop:1 }}>{sub}</div>}
       </div>
     </div>
   );
 }
 
-function Row({ thumb, fallback, title, sub, tags, extra, onDelete, onEdit }: any) {
+function Row({ thumb, fallback, title, sub, tags, extra, onDelete, onEdit, t }: any) {
   const [hov, setHov] = useState(false);
   return (
-    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ display:'flex', gap:13, alignItems:'flex-start', padding:'13px 14px', borderRadius:13, border:'1px solid', borderColor: hov ? '#dbeafe' : '#f1f5f9', background: hov ? '#f8fafc' : 'white', transition:'all 0.15s' }}>
+    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ display:'flex', gap:13, alignItems:'flex-start', padding:'13px 14px', borderRadius:13, border:'1px solid', borderColor: hov ? t.rowBorderHover : t.rowBorder, background: hov ? t.rowBgHover : t.bgCard, transition:'all 0.15s' }}>
       {thumb
-        ? <img src={thumb} alt="" style={{ width:52, height:52, objectFit:'cover', borderRadius:9, flexShrink:0, border:'1px solid #e2e8f0' }} />
-        : <div style={{ width:52, height:52, borderRadius:9, background:'#f1f5f9', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'#94a3b8' }}>{fallback}</div>
+        ? <img src={thumb} alt="" style={{ width:52, height:52, objectFit:'cover', borderRadius:9, flexShrink:0, border:`1px solid ${t.border}` }} />
+        : <div style={{ width:52, height:52, borderRadius:9, background:t.bgSub, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:t.textSubtle }}>{fallback}</div>
       }
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontWeight:600, fontSize:14, color:'#1e293b', marginBottom:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{title}</div>
-        {sub && <div style={{ fontSize:12, color:'#94a3b8', marginBottom: tags?.length ? 5 : 0 }}>{sub}</div>}
+        <div style={{ fontWeight:600, fontSize:14, color:t.text, marginBottom:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{title}</div>
+        {sub && <div style={{ fontSize:12, color:t.textSubtle, marginBottom: tags?.length ? 5 : 0 }}>{sub}</div>}
         {tags?.length > 0 && (
           <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-            {tags.slice(0, 4).map((t: string) => <span key={t} style={{ background:'#eff6ff', color:'#2563eb', borderRadius:20, padding:'2px 8px', fontSize:11, fontWeight:500 }}>{t}</span>)}
-            {tags.length > 4 && <span style={{ color:'#94a3b8', fontSize:11 }}>+{tags.length - 4}</span>}
+            {tags.slice(0, 4).map((tg: string) => <span key={tg} style={{ background:t.bgChip, color:t.textTag, borderRadius:20, padding:'2px 8px', fontSize:11, fontWeight:500 }}>{tg}</span>)}
+            {tags.length > 4 && <span style={{ color:t.textSubtle, fontSize:11 }}>+{tags.length - 4}</span>}
           </div>
         )}
         {extra}
@@ -391,16 +441,16 @@ function Row({ thumb, fallback, title, sub, tags, extra, onDelete, onEdit }: any
       <div style={{ display:'flex', gap:6, flexShrink:0 }}>
         {onEdit && (
           <button onClick={onEdit}
-            style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:8, padding:7, cursor:'pointer', color:'#64748b', display:'flex', transition:'all 0.15s' }}
-            onMouseEnter={(e: any) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#2563eb'; e.currentTarget.style.borderColor = '#bfdbfe'; }}
-            onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
+            style={{ background:'none', border:`1px solid ${t.border}`, borderRadius:8, padding:7, cursor:'pointer', color:t.textMuted, display:'flex', transition:'all 0.15s' }}
+            onMouseEnter={(e: any) => { e.currentTarget.style.background = t.bgChip; e.currentTarget.style.color = '#2563eb'; e.currentTarget.style.borderColor = t.borderInfo; }}
+            onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = t.textMuted; e.currentTarget.style.borderColor = t.border; }}>
             <EditIcon />
           </button>
         )}
         <button onClick={onDelete}
-          style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:8, padding:7, cursor:'pointer', color:'#94a3b8', display:'flex', transition:'all 0.15s' }}
+          style={{ background:'none', border:`1px solid ${t.border}`, borderRadius:8, padding:7, cursor:'pointer', color:t.textSubtle, display:'flex', transition:'all 0.15s' }}
           onMouseEnter={(e: any) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; e.currentTarget.style.borderColor = '#fecaca'; }}
-          onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.borderColor = '#e2e8f0'; }}>
+          onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = t.textSubtle; e.currentTarget.style.borderColor = t.border; }}>
           <TrashIcon />
         </button>
       </div>
@@ -408,15 +458,15 @@ function Row({ thumb, fallback, title, sub, tags, extra, onDelete, onEdit }: any
   );
 }
 
-function Btn({ onClick, disabled, children, color = '#2563eb', shadow = 'rgba(37,99,235,0.2)', variant = 'fill', style: sx }: any) {
+function Btn({ onClick, disabled, children, color = '#2563eb', shadow = 'rgba(37,99,235,0.2)', variant = 'fill', style: sx, t }: any) {
   const [hov, setHov] = useState(false);
   const fill = variant === 'fill';
   return (
     <button onClick={onClick} disabled={disabled} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{ width:'100%', padding:'12px', borderRadius:11, border: fill ? 'none' : `1px solid ${color}`, cursor: disabled ? 'not-allowed' : 'pointer',
-        background: disabled ? '#e2e8f0' : fill ? color : hov ? color+'18' : 'white',
+        background: disabled ? t.bgSub : fill ? color : hov ? color+'18' : t.bgCard,
         opacity: disabled ? 0.6 : hov && fill ? 0.88 : 1,
-        color: disabled ? '#94a3b8' : fill ? 'white' : color, fontSize:14, fontWeight:600,
+        color: disabled ? t.textSubtle : fill ? 'white' : color, fontSize:14, fontWeight:600,
         boxShadow: disabled || !fill ? 'none' : `0 2px 10px ${shadow}`,
         display:'flex', alignItems:'center', justifyContent:'center', gap:7,
         transition:'all 0.15s', fontFamily:'inherit', ...sx }}>
@@ -425,12 +475,12 @@ function Btn({ onClick, disabled, children, color = '#2563eb', shadow = 'rgba(37
   );
 }
 
-function SectionDivider({ label }: { label: string }) {
+function SectionDivider({ label, t }: { label: string; t: ReturnType<typeof useThemeVars> }) {
   return (
     <div style={{ display:'flex', alignItems:'center', gap:10, margin:'4px 0' }}>
-      <div style={{ flex:1, height:1, background:'#f1f5f9' }} />
-      <span style={{ fontSize:11, fontWeight:600, color:'#cbd5e1', textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>{label}</span>
-      <div style={{ flex:1, height:1, background:'#f1f5f9' }} />
+      <div style={{ flex:1, height:1, background:t.border }} />
+      <span style={{ fontSize:11, fontWeight:600, color:t.textSubtle, textTransform:'uppercase', letterSpacing:'0.06em', whiteSpace:'nowrap' }}>{label}</span>
+      <div style={{ flex:1, height:1, background:t.border }} />
     </div>
   );
 }
@@ -442,12 +492,12 @@ const SEASON_OPTIONS = [
   { value:'winter', label:'❄️ Зима' },
 ];
 
-function CoordModeSelector({ coordMode, setCoordMode }: any) {
+function CoordModeSelector({ coordMode, setCoordMode, t }: any) {
   return (
     <div style={{ display:'flex', gap:6, marginBottom:10 }}>
       {COORD_MODES.map(({ id, label, icon }) => (
         <button key={id} onClick={() => setCoordMode(id)}
-          style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 10px', borderRadius:9, border:'1px solid', borderColor: coordMode === id ? '#2563eb' : '#e2e8f0', background: coordMode === id ? '#eff6ff' : 'white', color: coordMode === id ? '#2563eb' : '#64748b', cursor:'pointer', fontSize:13, fontWeight:500, transition:'all 0.15s', fontFamily:'inherit' }}>
+          style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 10px', borderRadius:9, border:'1px solid', borderColor: coordMode === id ? '#2563eb' : t.border, background: coordMode === id ? t.bgChip : t.bgCard, color: coordMode === id ? '#2563eb' : t.textMuted, cursor:'pointer', fontSize:13, fontWeight:500, transition:'all 0.15s', fontFamily:'inherit' }}>
           {icon}{label}
         </button>
       ))}
@@ -458,7 +508,7 @@ function CoordModeSelector({ coordMode, setCoordMode }: any) {
 // ============================================================
 // EDIT WATER FORM
 // ============================================================
-function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel, showToast }: any) {
+function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel, showToast, t }: any) {
   const [form, setForm] = useState({
     name: water.name || '',
     description: water.description || '',
@@ -507,109 +557,109 @@ function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel
 
   return (
     <div style={{ animation:'fadeUp 0.25s ease' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:26, paddingBottom:18, borderBottom:'1px solid #f1f5f9' }}>
-        <button onClick={onCancel} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'1px solid #e2e8f0', borderRadius:9, padding:'7px 12px', cursor:'pointer', color:'#64748b', fontSize:13, fontWeight:500, fontFamily:'inherit' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:26, paddingBottom:18, borderBottom:`1px solid ${t.border}` }}>
+        <button onClick={onCancel} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:`1px solid ${t.border}`, borderRadius:9, padding:'7px 12px', cursor:'pointer', color:t.textMuted, fontSize:13, fontWeight:500, fontFamily:'inherit' }}>
           <ArrowLeftIcon /> Назад
         </button>
         <div>
-          <div style={{ fontWeight:700, fontSize:16, color:'#0f172a' }}>Редагування водойми</div>
-          <div style={{ fontSize:12, color:'#94a3b8', marginTop:1 }}>{water.name}</div>
+          <div style={{ fontWeight:700, fontSize:16, color:t.text }}>Редагування водойми</div>
+          <div style={{ fontSize:12, color:t.textSubtle, marginTop:1 }}>{water.name}</div>
         </div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'460px 1fr', gap:22 }}>
-        <Card>
+        <Card t={t}>
           <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
-            <Field label="Назва" required><Inp value={form.name} onChange={(e: any) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє…" /></Field>
-            <Field label="Тип водойми">
-              <Sel value={form.waterType} onChange={(e: any) => setForm(p => ({ ...p, waterType: e.target.value }))} placeholder="— Обрати тип —">
-                {waterTypeOptions.map((t: any) => <option key={t._id || t} value={t.name || t}>{t.emoji ? `${t.emoji} ${t.name}` : t.name || t}</option>)}
+            <Field label="Назва" required t={t}><Inp value={form.name} onChange={(e: any) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє…" t={t} /></Field>
+            <Field label="Тип водойми" t={t}>
+              <Sel value={form.waterType} onChange={(e: any) => setForm(p => ({ ...p, waterType: e.target.value }))} placeholder="— Обрати тип —" t={t}>
+                {waterTypeOptions.map((tp: any) => <option key={tp._id || tp} value={tp.name || tp}>{tp.emoji ? `${tp.emoji} ${tp.name}` : tp.name || tp}</option>)}
               </Sel>
             </Field>
-            <Field label="Опис"><Inp as="textarea" value={form.description} onChange={(e: any) => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" /></Field>
-            <Field label="Координати" required>
-              <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} />
+            <Field label="Опис" t={t}><Inp as="textarea" value={form.description} onChange={(e: any) => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" t={t} /></Field>
+            <Field label="Координати" required t={t}>
+              <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} t={t} />
               {coordMode === 'manual' ? (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                  <Inp value={form.lat} onChange={(e: any) => setForm(p => ({ ...p, lat: e.target.value }))} placeholder="Широта 49.12…" />
-                  <Inp value={form.lng} onChange={(e: any) => setForm(p => ({ ...p, lng: e.target.value }))} placeholder="Довгота 25.67…" />
+                  <Inp value={form.lat} onChange={(e: any) => setForm(p => ({ ...p, lat: e.target.value }))} placeholder="Широта 49.12…" t={t} />
+                  <Inp value={form.lng} onChange={(e: any) => setForm(p => ({ ...p, lng: e.target.value }))} placeholder="Довгота 25.67…" t={t} />
                 </div>
               ) : (
                 <>
-                  <MapPicker lat={form.lat} lng={form.lng} onSelect={(la, ln) => setForm(p => ({ ...p, lat: la, lng: ln }))} />
+                  <MapPicker lat={form.lat} lng={form.lng} onSelect={(la: string, ln: string) => setForm(p => ({ ...p, lat: la, lng: ln }))} />
                   {form.lat && form.lng && (
-                    <div style={{ marginTop:8, padding:'7px 12px', borderRadius:9, background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#059669', fontSize:12.5, fontWeight:500, display:'flex', alignItems:'center', gap:6 }}>
+                    <div style={{ marginTop:8, padding:'7px 12px', borderRadius:9, background:t.bgSuccess, border:`1px solid ${t.borderSuccess}`, color:t.textSuccess, fontSize:12.5, fontWeight:500, display:'flex', alignItems:'center', gap:6 }}>
                       <CheckIcon /> {form.lat}, {form.lng}
                     </div>
                   )}
                 </>
               )}
             </Field>
-            <SectionDivider label="Риби та фільтри" />
-            <FishTagger value={fishTags} onChange={setFishTags} allFish={fishList} />
+            <SectionDivider label="Риби та фільтри" t={t} />
+            <FishTagger value={fishTags} onChange={setFishTags} allFish={fishList} t={t} />
             {dominantFishOptions.length > 0 && (
-              <ChipPicker label="Переважаючі риби (фільтри)" options={dominantFishOptions} value={dominantFish} onChange={setDominantFish} colorScheme="blue" />
+              <ChipPicker label="Переважаючі риби (фільтри)" options={dominantFishOptions} value={dominantFish} onChange={setDominantFish} colorScheme="blue" t={t} />
             )}
-            <ChipPicker label="Найкращі сезони" options={SEASON_OPTIONS} value={bestSeasons} onChange={setBestSeasons} colorScheme="green" />
-            <SectionDivider label="Фотографії" />
-            <ExistingImages images={water.images} toRemove={removeImages} onToggleRemove={toggleRemove} label="Поточні фото (× щоб видалити)" />
-            <ImageZone files={newFiles} onChange={setNewFiles} label="Додати нові фото" multiple />
+            <ChipPicker label="Найкращі сезони" options={SEASON_OPTIONS} value={bestSeasons} onChange={setBestSeasons} colorScheme="green" t={t} />
+            <SectionDivider label="Фотографії" t={t} />
+            <ExistingImages images={water.images} toRemove={removeImages} onToggleRemove={toggleRemove} label="Поточні фото (× щоб видалити)" t={t} />
+            <ImageZone files={newFiles} onChange={setNewFiles} label="Додати нові фото" multiple t={t} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginTop:4 }}>
-              <Btn onClick={onCancel} variant="outline" color="#64748b">Скасувати</Btn>
-              <Btn onClick={save} disabled={loading} color="#2563eb"><SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}</Btn>
+              <Btn onClick={onCancel} variant="outline" color="#64748b" t={t}>Скасувати</Btn>
+              <Btn onClick={save} disabled={loading} color="#2563eb" t={t}><SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}</Btn>
             </div>
           </div>
         </Card>
         <div>
-          <div style={{ fontWeight:700, fontSize:15, color:'#1e293b', marginBottom:14 }}>Попередній перегляд</div>
-          <Card>
+          <div style={{ fontWeight:700, fontSize:15, color:t.text, marginBottom:14 }}>Попередній перегляд</div>
+          <Card t={t}>
             {water.images && water.images.length > 0 && (
               <div style={{ marginBottom:18 }}>
-                <div style={{ fontSize:12, fontWeight:600, color:'#64748b', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.04em' }}>Фото</div>
+                <div style={{ fontSize:12, fontWeight:600, color:t.textMuted, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.04em' }}>Фото</div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                   {water.images.map((img: any, i: number) => {
                     const removing = removeImages.includes(img.publicId);
                     return (
                       <div key={i} style={{ position:'relative' }}>
-                        <img src={img.url} alt="" style={{ width:80, height:80, objectFit:'cover', borderRadius:10, border:`2px solid ${removing ? '#ef4444' : '#e2e8f0'}`, opacity: removing ? 0.3 : 1, transition:'all 0.2s' }} />
-                        {removing && <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#ef4444', background:'rgba(255,255,255,0.1)', borderRadius:10 }}>ВИДАЛИТИ</div>}
+                        <img src={img.url} alt="" style={{ width:80, height:80, objectFit:'cover', borderRadius:10, border:`2px solid ${removing ? '#ef4444' : t.border}`, opacity: removing ? 0.3 : 1, transition:'all 0.2s' }} />
+                        {removing && <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:700, color:'#ef4444', borderRadius:10 }}>ВИДАЛИТИ</div>}
                       </div>
                     );
                   })}
                   {newFiles.map((f, i) => (
                     <div key={`new-${i}`} style={{ position:'relative' }}>
-                      <img src={URL.createObjectURL(f)} alt="" style={{ width:80, height:80, objectFit:'cover', borderRadius:10, border:'2px solid #bbf7d0' }} />
+                      <img src={URL.createObjectURL(f)} alt="" style={{ width:80, height:80, objectFit:'cover', borderRadius:10, border:`2px solid ${t.borderSuccess}` }} />
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            <div style={{ fontWeight:700, fontSize:18, color:'#0f172a', marginBottom:6 }}>{form.name || <span style={{ color:'#cbd5e1' }}>Назва водойми</span>}</div>
+            <div style={{ fontWeight:700, fontSize:18, color:t.text, marginBottom:6 }}>{form.name || <span style={{ color:t.textSubtle }}>Назва водойми</span>}</div>
             {form.waterType && (
-              <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#f0fdf4', borderRadius:8, padding:'4px 10px', fontSize:12, color:'#059669', marginBottom:8, fontWeight:600, border:'1px solid #bbf7d0' }}>
-                {waterTypeOptions.find((t: any) => (t.name || t) === form.waterType)?.emoji || '💧'} {form.waterType}
+              <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:t.bgSuccess, borderRadius:8, padding:'4px 10px', fontSize:12, color:t.textSuccess, marginBottom:8, fontWeight:600, border:`1px solid ${t.borderSuccess}` }}>
+                {waterTypeOptions.find((tp: any) => (tp.name || tp) === form.waterType)?.emoji || '💧'} {form.waterType}
               </div>
             )}
             {form.lat && form.lng && (
-              <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#f1f5f9', borderRadius:8, padding:'4px 10px', fontSize:12, color:'#64748b', marginBottom:12, fontWeight:500, marginLeft:6 }}>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:t.bgSub, borderRadius:8, padding:'4px 10px', fontSize:12, color:t.textMuted, marginBottom:12, fontWeight:500, marginLeft:6 }}>
                 <PinIcon /> {parseFloat(form.lat).toFixed(4)}, {parseFloat(form.lng).toFixed(4)}
               </div>
             )}
-            {form.description && <div style={{ fontSize:13.5, color:'#475569', lineHeight:1.6, marginBottom:14 }}>{form.description}</div>}
+            {form.description && <div style={{ fontSize:13.5, color:t.textMuted, lineHeight:1.6, marginBottom:14 }}>{form.description}</div>}
             {dominantFish.length > 0 && (
               <div style={{ marginBottom:10 }}>
-                <div style={{ fontSize:12, fontWeight:600, color:'#64748b', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.04em' }}>Переважаючі риби</div>
+                <div style={{ fontSize:12, fontWeight:600, color:t.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.04em' }}>Переважаючі риби</div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
-                  {dominantFish.map((t: string) => <span key={t} style={{ background:'#eff6ff', color:'#2563eb', borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:500 }}>{t}</span>)}
+                  {dominantFish.map((tg: string) => <span key={tg} style={{ background:t.bgChip, color:t.textTag, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:500 }}>{tg}</span>)}
                 </div>
               </div>
             )}
             {bestSeasons.length > 0 && (
               <div>
-                <div style={{ fontSize:12, fontWeight:600, color:'#64748b', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.04em' }}>Найкращі сезони</div>
+                <div style={{ fontSize:12, fontWeight:600, color:t.textMuted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.04em' }}>Найкращі сезони</div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
                   {bestSeasons.map((s: string) => {
                     const opt = SEASON_OPTIONS.find(o => o.value === s);
-                    return <span key={s} style={{ background:'#f0fdf4', color:'#059669', borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:500 }}>{opt?.label || s}</span>;
+                    return <span key={s} style={{ background:t.bgSuccess, color:t.textSuccess, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:500 }}>{opt?.label || s}</span>;
                   })}
                 </div>
               </div>
@@ -624,7 +674,7 @@ function EditWaterForm({ water, fishList, filterConfig, authH, onSaved, onCancel
 // ============================================================
 // EDIT FISH FORM
 // ============================================================
-function EditFishForm({ fish, authH, onSaved, onCancel, showToast }: any) {
+function EditFishForm({ fish, authH, onSaved, onCancel, showToast, t }: any) {
   const [form, setForm] = useState({
     name: fish.name || '',
     scientificName: fish.scientificName || '',
@@ -661,63 +711,63 @@ function EditFishForm({ fish, authH, onSaved, onCancel, showToast }: any) {
 
   return (
     <div style={{ animation:'fadeUp 0.25s ease' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:26, paddingBottom:18, borderBottom:'1px solid #f1f5f9' }}>
-        <button onClick={onCancel} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:'1px solid #e2e8f0', borderRadius:9, padding:'7px 12px', cursor:'pointer', color:'#64748b', fontSize:13, fontWeight:500, fontFamily:'inherit' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:26, paddingBottom:18, borderBottom:`1px solid ${t.border}` }}>
+        <button onClick={onCancel} style={{ display:'flex', alignItems:'center', gap:6, background:'none', border:`1px solid ${t.border}`, borderRadius:9, padding:'7px 12px', cursor:'pointer', color:t.textMuted, fontSize:13, fontWeight:500, fontFamily:'inherit' }}>
           <ArrowLeftIcon /> Назад
         </button>
         <div>
-          <div style={{ fontWeight:700, fontSize:16, color:'#0f172a' }}>Редагування риби</div>
-          <div style={{ fontSize:12, color:'#94a3b8', marginTop:1 }}>{fish.name}</div>
+          <div style={{ fontWeight:700, fontSize:16, color:t.text }}>Редагування риби</div>
+          <div style={{ fontSize:12, color:t.textSubtle, marginTop:1 }}>{fish.name}</div>
         </div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'420px 1fr', gap:22 }}>
-        <Card>
+        <Card t={t}>
           <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
-            <Field label="Назва" required><Inp value={form.name} onChange={(e: any) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Коропа, Окунь…" /></Field>
-            <Field label="Наукова назва"><Inp value={form.scientificName} onChange={(e: any) => setForm(p => ({ ...p, scientificName: e.target.value }))} placeholder="Cyprinus carpio…" /></Field>
-            <Field label="Опис"><Inp as="textarea" value={form.description} onChange={(e: any) => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Поведінка, наживки, сезон…" /></Field>
+            <Field label="Назва" required t={t}><Inp value={form.name} onChange={(e: any) => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Коропа, Окунь…" t={t} /></Field>
+            <Field label="Наукова назва" t={t}><Inp value={form.scientificName} onChange={(e: any) => setForm(p => ({ ...p, scientificName: e.target.value }))} placeholder="Cyprinus carpio…" t={t} /></Field>
+            <Field label="Опис" t={t}><Inp as="textarea" value={form.description} onChange={(e: any) => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Поведінка, наживки, сезон…" t={t} /></Field>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <Field label="Макс. вага (кг)"><Inp type="number" min="0" step="0.1" value={form.maxWeight} onChange={(e: any) => setForm(p => ({ ...p, maxWeight: e.target.value }))} placeholder="15" /></Field>
-              <Field label="Макс. довжина (см)"><Inp type="number" min="0" value={form.maxLength} onChange={(e: any) => setForm(p => ({ ...p, maxLength: e.target.value }))} placeholder="90" /></Field>
+              <Field label="Макс. вага (кг)" t={t}><Inp type="number" min="0" step="0.1" value={form.maxWeight} onChange={(e: any) => setForm(p => ({ ...p, maxWeight: e.target.value }))} placeholder="15" t={t} /></Field>
+              <Field label="Макс. довжина (см)" t={t}><Inp type="number" min="0" value={form.maxLength} onChange={(e: any) => setForm(p => ({ ...p, maxLength: e.target.value }))} placeholder="90" t={t} /></Field>
             </div>
-            <SectionDivider label="Фото риби" />
+            <SectionDivider label="Фото риби" t={t} />
             {fish.image?.url && !newFile[0] && (
               <div>
-                <div style={{ fontSize:12, fontWeight:600, color:'#64748b', marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>Поточне фото</div>
+                <div style={{ fontSize:12, fontWeight:600, color:t.textMuted, marginBottom:7, textTransform:'uppercase', letterSpacing:'0.04em' }}>Поточне фото</div>
                 <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <img src={fish.image.url} alt="" style={{ width:72, height:72, objectFit:'cover', borderRadius:10, border:`2px solid ${removeImage ? '#ef4444' : '#e2e8f0'}`, opacity: removeImage ? 0.35 : 1, transition:'all 0.15s' }} />
+                  <img src={fish.image.url} alt="" style={{ width:72, height:72, objectFit:'cover', borderRadius:10, border:`2px solid ${removeImage ? '#ef4444' : t.border}`, opacity: removeImage ? 0.35 : 1, transition:'all 0.15s' }} />
                   <button onClick={() => setRemoveImage(!removeImage)}
-                    style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:9, border:`1px solid ${removeImage ? '#fecaca' : '#e2e8f0'}`, background: removeImage ? '#fef2f2' : 'white', color: removeImage ? '#dc2626' : '#64748b', cursor:'pointer', fontSize:12.5, fontWeight:500, fontFamily:'inherit', transition:'all 0.15s' }}>
+                    style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:9, border:`1px solid ${removeImage ? '#fecaca' : t.border}`, background: removeImage ? '#fef2f2' : t.bgCard, color: removeImage ? '#dc2626' : t.textMuted, cursor:'pointer', fontSize:12.5, fontWeight:500, fontFamily:'inherit', transition:'all 0.15s' }}>
                     {removeImage ? <><PlusIcon /> Відновити</> : <><TrashIcon /> Видалити фото</>}
                   </button>
                 </div>
                 {removeImage && <div style={{ fontSize:11, color:'#ef4444', marginTop:5, fontWeight:500 }}>⚠️ Фото буде видалено після збереження</div>}
               </div>
             )}
-            <ImageZone files={newFile} onChange={f => { setNewFile(f.slice(-1)); if (f.length) setRemoveImage(false); }} label={fish.image?.url ? 'Замінити фото' : 'Завантажити фото'} multiple={false} />
+            <ImageZone files={newFile} onChange={f => { setNewFile(f.slice(-1)); if (f.length) setRemoveImage(false); }} label={fish.image?.url ? 'Замінити фото' : 'Завантажити фото'} multiple={false} t={t} />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginTop:4 }}>
-              <Btn onClick={onCancel} variant="outline" color="#64748b">Скасувати</Btn>
-              <Btn onClick={save} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)"><SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}</Btn>
+              <Btn onClick={onCancel} variant="outline" color="#64748b" t={t}>Скасувати</Btn>
+              <Btn onClick={save} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)" t={t}><SaveIcon /> {loading ? 'Зберігаємо…' : 'Зберегти'}</Btn>
             </div>
           </div>
         </Card>
         <div>
-          <div style={{ fontWeight:700, fontSize:15, color:'#1e293b', marginBottom:14 }}>Картка риби</div>
-          <Card>
+          <div style={{ fontWeight:700, fontSize:15, color:t.text, marginBottom:14 }}>Картка риби</div>
+          <Card t={t}>
             <div style={{ display:'flex', gap:18, alignItems:'flex-start', marginBottom:18 }}>
-              <div style={{ width:100, height:100, borderRadius:14, background:'#f1f5f9', flexShrink:0, overflow:'hidden', border:'1px solid #e2e8f0' }}>
-                {currentImageUrl ? <img src={currentImageUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:'#cbd5e1', fontSize:32 }}>🐟</div>}
+              <div style={{ width:100, height:100, borderRadius:14, background:t.bgSub, flexShrink:0, overflow:'hidden', border:`1px solid ${t.border}` }}>
+                {currentImageUrl ? <img src={currentImageUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', color:t.textSubtle, fontSize:32 }}>🐟</div>}
               </div>
               <div>
-                <div style={{ fontWeight:700, fontSize:20, color:'#0f172a', marginBottom:3 }}>{form.name || <span style={{ color:'#cbd5e1' }}>Назва</span>}</div>
-                {form.scientificName && <div style={{ fontSize:13, color:'#94a3b8', fontStyle:'italic', marginBottom:10 }}>{form.scientificName}</div>}
+                <div style={{ fontWeight:700, fontSize:20, color:t.text, marginBottom:3 }}>{form.name || <span style={{ color:t.textSubtle }}>Назва</span>}</div>
+                {form.scientificName && <div style={{ fontSize:13, color:t.textSubtle, fontStyle:'italic', marginBottom:10 }}>{form.scientificName}</div>}
                 <div style={{ display:'flex', gap:7 }}>
-                  {form.maxWeight && <span style={{ background:'#f1f5f9', borderRadius:8, padding:'4px 10px', fontSize:12, color:'#475569', fontWeight:500 }}>⚖️ до {form.maxWeight} кг</span>}
-                  {form.maxLength && <span style={{ background:'#f1f5f9', borderRadius:8, padding:'4px 10px', fontSize:12, color:'#475569', fontWeight:500 }}>📏 до {form.maxLength} см</span>}
+                  {form.maxWeight && <span style={{ background:t.bgSub, borderRadius:8, padding:'4px 10px', fontSize:12, color:t.textMuted, fontWeight:500 }}>⚖️ до {form.maxWeight} кг</span>}
+                  {form.maxLength && <span style={{ background:t.bgSub, borderRadius:8, padding:'4px 10px', fontSize:12, color:t.textMuted, fontWeight:500 }}>📏 до {form.maxLength} см</span>}
                 </div>
               </div>
             </div>
-            {form.description && <div style={{ background:'#f8fafc', borderRadius:11, padding:'12px 14px', fontSize:13.5, color:'#475569', lineHeight:1.65, border:'1px solid #f1f5f9' }}>{form.description}</div>}
+            {form.description && <div style={{ background:t.bgSub, borderRadius:11, padding:'12px 14px', fontSize:13.5, color:t.textMuted, lineHeight:1.65, border:`1px solid ${t.border}` }}>{form.description}</div>}
           </Card>
         </div>
       </div>
@@ -728,7 +778,7 @@ function EditFishForm({ fish, authH, onSaved, onCancel, showToast }: any) {
 // ============================================================
 // FILTERS TAB
 // ============================================================
-function FiltersTab({ authH, showToast }: any) {
+function FiltersTab({ authH, showToast, t }: any) {
   const [waterTypes, setWaterTypes] = useState<any[]>([]);
   const [filterFish, setFilterFish] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -834,7 +884,7 @@ function FiltersTab({ authH, showToast }: any) {
   };
 
   if (loading) return (
-    <div style={{ textAlign:'center', padding:60, color:'#94a3b8' }}>
+    <div style={{ textAlign:'center', padding:60, color:t.textSubtle }}>
       <div style={{ fontSize:28, marginBottom:8 }}>⚙️</div>
       <div style={{ fontSize:14 }}>Завантаження фільтрів…</div>
     </div>
@@ -843,116 +893,116 @@ function FiltersTab({ authH, showToast }: any) {
   return (
     <div>
       <div style={{ marginBottom:26 }}>
-        <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:'#0f172a', letterSpacing:'-0.02em' }}>Фільтри та категорії</h1>
-        <p style={{ color:'#64748b', margin:'4px 0 0', fontSize:13.5 }}>Керуйте типами водойм, рибами для фільтрів і сезонами</p>
+        <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:t.text, letterSpacing:'-0.02em' }}>Фільтри та категорії</h1>
+        <p style={{ color:t.textMuted, margin:'4px 0 0', fontSize:13.5 }}>Керуйте типами водойм, рибами для фільтрів і сезонами</p>
       </div>
-      <div style={{ background:'#eff6ff', border:'1px solid #bfdbfe', borderRadius:14, padding:'14px 18px', marginBottom:24, display:'flex', gap:12, alignItems:'flex-start' }}>
+      <div style={{ background:t.bgInfo, border:`1px solid ${t.borderInfo}`, borderRadius:14, padding:'14px 18px', marginBottom:24, display:'flex', gap:12, alignItems:'flex-start' }}>
         <span style={{ fontSize:18 }}>ℹ️</span>
-        <div style={{ fontSize:13.5, color:'#1d4ed8', lineHeight:1.6 }}>
+        <div style={{ fontSize:13.5, color:t.textInfo, lineHeight:1.6 }}>
           <strong>Як це працює:</strong> Типи водойм і риби-фільтри використовуються при додаванні/редагуванні водойм.
         </div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
-        <Card>
-          <CardHead icon={<WaterIcon />} iconBg="#f0fdf4" iconColor="#059669" title="Типи водойм" sub="Ставок, озеро, річка, платна водойма…" />
+        <Card t={t}>
+          <CardHead icon={<WaterIcon />} iconBg={t.bgSuccess} iconColor={t.textSuccess} title="Типи водойм" sub="Ставок, озеро, річка, платна водойма…" t={t} />
           <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:20 }}>
             {editingWt ? (
               <>
-                <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', marginBottom:4 }}>✏️ Редагування</div>
+                <div style={{ fontSize:13, fontWeight:600, color:t.text, marginBottom:4 }}>✏️ Редагування</div>
                 <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={editingWt.emoji} onChange={(e: any) => setEditingWt((p: any) => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} /></div>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={editingWt.name} onChange={(e: any) => setEditingWt((p: any) => ({ ...p, name: e.target.value }))} placeholder="Назва типу" /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={editingWt.emoji} onChange={(e: any) => setEditingWt((p: any) => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} t={t} /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={editingWt.name} onChange={(e: any) => setEditingWt((p: any) => ({ ...p, name: e.target.value }))} placeholder="Назва типу" t={t} /></div>
                 </div>
-                <Inp as="textarea" value={editingWt.description || ''} onChange={(e: any) => setEditingWt((p: any) => ({ ...p, description: e.target.value }))} placeholder="Короткий опис типу…" style={{ minHeight:60 }} />
+                <Inp as="textarea" value={editingWt.description || ''} onChange={(e: any) => setEditingWt((p: any) => ({ ...p, description: e.target.value }))} placeholder="Короткий опис типу…" style={{ minHeight:60 }} t={t} />
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                  <Btn onClick={() => setEditingWt(null)} variant="outline" color="#64748b" style={{ padding:'9px' }}>Скасувати</Btn>
-                  <Btn onClick={saveWaterType} color="#059669" shadow="rgba(5,150,105,0.2)" style={{ padding:'9px' }}><SaveIcon /> Зберегти</Btn>
+                  <Btn onClick={() => setEditingWt(null)} variant="outline" color="#64748b" style={{ padding:'9px' }} t={t}>Скасувати</Btn>
+                  <Btn onClick={saveWaterType} color="#059669" shadow="rgba(5,150,105,0.2)" style={{ padding:'9px' }} t={t}><SaveIcon /> Зберегти</Btn>
                 </div>
               </>
             ) : (
               <>
                 <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={wtForm.emoji} onChange={(e: any) => setWtForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} /></div>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={wtForm.name} onChange={(e: any) => setWtForm(p => ({ ...p, name: e.target.value }))} placeholder="Ставок, Озеро, Платна…" onKeyDown={(e: any) => { if (e.key === 'Enter') addWaterType(); }} /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={wtForm.emoji} onChange={(e: any) => setWtForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🏞️" style={{ textAlign:'center', fontSize:18 }} t={t} /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={wtForm.name} onChange={(e: any) => setWtForm(p => ({ ...p, name: e.target.value }))} placeholder="Ставок, Озеро, Платна…" onKeyDown={(e: any) => { if (e.key === 'Enter') addWaterType(); }} t={t} /></div>
                 </div>
-                <Inp as="textarea" value={wtForm.description} onChange={(e: any) => setWtForm(p => ({ ...p, description: e.target.value }))} placeholder="Короткий опис типу…" style={{ minHeight:52 }} />
-                <Btn onClick={addWaterType} disabled={wtSaving} color="#059669" shadow="rgba(5,150,105,0.2)" style={{ padding:'10px' }}><PlusIcon /> {wtSaving ? 'Додаємо…' : 'Додати тип водойми'}</Btn>
+                <Inp as="textarea" value={wtForm.description} onChange={(e: any) => setWtForm(p => ({ ...p, description: e.target.value }))} placeholder="Короткий опис типу…" style={{ minHeight:52 }} t={t} />
+                <Btn onClick={addWaterType} disabled={wtSaving} color="#059669" shadow="rgba(5,150,105,0.2)" style={{ padding:'10px' }} t={t}><PlusIcon /> {wtSaving ? 'Додаємо…' : 'Додати тип водойми'}</Btn>
               </>
             )}
           </div>
-          <SectionDivider label={`Усього: ${waterTypes.length}`} />
+          <SectionDivider label={`Усього: ${waterTypes.length}`} t={t} />
           <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:14, maxHeight:360, overflowY:'auto' }}>
             {waterTypes.length === 0 ? (
-              <div style={{ textAlign:'center', padding:'28px 16px', color:'#94a3b8' }}><div style={{ fontSize:26, marginBottom:6 }}>💧</div><div style={{ fontSize:13 }}>Типів водойм ще немає</div></div>
+              <div style={{ textAlign:'center', padding:'28px 16px', color:t.textSubtle }}><div style={{ fontSize:26, marginBottom:6 }}>💧</div><div style={{ fontSize:13 }}>Типів водойм ще немає</div></div>
             ) : waterTypes.map((wt: any) => (
-              <div key={wt._id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:11, border:'1px solid #f1f5f9', background:'white' }}>
-                <div style={{ width:36, height:36, borderRadius:9, background:'#f0fdf4', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{wt.emoji || '💧'}</div>
-                <div style={{ flex:1, minWidth:0 }}><div style={{ fontWeight:600, fontSize:13.5, color:'#1e293b' }}>{wt.name}</div>{wt.description && <div style={{ fontSize:11.5, color:'#94a3b8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{wt.description}</div>}</div>
+              <div key={wt._id} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:11, border:`1px solid ${t.border}`, background:t.bgCard }}>
+                <div style={{ width:36, height:36, borderRadius:9, background:t.bgSuccess, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{wt.emoji || '💧'}</div>
+                <div style={{ flex:1, minWidth:0 }}><div style={{ fontWeight:600, fontSize:13.5, color:t.text }}>{wt.name}</div>{wt.description && <div style={{ fontSize:11.5, color:t.textSubtle, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{wt.description}</div>}</div>
                 <div style={{ display:'flex', gap:5 }}>
-                  <button onClick={() => setEditingWt({ ...wt })} style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:6, cursor:'pointer', color:'#64748b', display:'flex', transition:'all 0.15s' }} onMouseEnter={(e: any) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#2563eb'; }} onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#64748b'; }}><EditIcon /></button>
-                  <button onClick={() => deleteWaterType(wt._id, wt.name)} style={{ background:'none', border:'1px solid #e2e8f0', borderRadius:7, padding:6, cursor:'pointer', color:'#94a3b8', display:'flex', transition:'all 0.15s' }} onMouseEnter={(e: any) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; }} onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#94a3b8'; }}><TrashIcon /></button>
+                  <button onClick={() => setEditingWt({ ...wt })} style={{ background:'none', border:`1px solid ${t.border}`, borderRadius:7, padding:6, cursor:'pointer', color:t.textMuted, display:'flex', transition:'all 0.15s' }} onMouseEnter={(e: any) => { e.currentTarget.style.background = t.bgChip; e.currentTarget.style.color = '#2563eb'; }} onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = t.textMuted; }}><EditIcon /></button>
+                  <button onClick={() => deleteWaterType(wt._id, wt.name)} style={{ background:'none', border:`1px solid ${t.border}`, borderRadius:7, padding:6, cursor:'pointer', color:t.textSubtle, display:'flex', transition:'all 0.15s' }} onMouseEnter={(e: any) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626'; }} onMouseLeave={(e: any) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = t.textSubtle; }}><TrashIcon /></button>
                 </div>
               </div>
             ))}
           </div>
         </Card>
-        <Card>
-          <CardHead icon={<FishIcon />} iconBg="#eff6ff" iconColor="#2563eb" title="Риби для фільтрів" sub="Короп, Карась, Форель, Щука…" />
+        <Card t={t}>
+          <CardHead icon={<FishIcon />} iconBg={t.bgChip} iconColor={t.textInfo} title="Риби для фільтрів" sub="Короп, Карась, Форель, Щука…" t={t} />
           <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:20 }}>
             {editingFf ? (
               <>
-                <div style={{ fontSize:13, fontWeight:600, color:'#0f172a', marginBottom:4 }}>✏️ Редагування</div>
+                <div style={{ fontSize:13, fontWeight:600, color:t.text, marginBottom:4 }}>✏️ Редагування</div>
                 <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={editingFf.emoji || ''} onChange={(e: any) => setEditingFf((p: any) => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} /></div>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={editingFf.name} onChange={(e: any) => setEditingFf((p: any) => ({ ...p, name: e.target.value }))} placeholder="Короп…" /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={editingFf.emoji || ''} onChange={(e: any) => setEditingFf((p: any) => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} t={t} /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>НАЗВА *</div><Inp value={editingFf.name} onChange={(e: any) => setEditingFf((p: any) => ({ ...p, name: e.target.value }))} placeholder="Короп…" t={t} /></div>
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                  <Btn onClick={() => setEditingFf(null)} variant="outline" color="#64748b" style={{ padding:'9px' }}>Скасувати</Btn>
-                  <Btn onClick={saveFilterFish} color="#2563eb" style={{ padding:'9px' }}><SaveIcon /> Зберегти</Btn>
+                  <Btn onClick={() => setEditingFf(null)} variant="outline" color="#64748b" style={{ padding:'9px' }} t={t}>Скасувати</Btn>
+                  <Btn onClick={saveFilterFish} color="#2563eb" style={{ padding:'9px' }} t={t}><SaveIcon /> Зберегти</Btn>
                 </div>
               </>
             ) : (
               <>
                 <div style={{ display:'grid', gridTemplateColumns:'60px 1fr', gap:10 }}>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={ffForm.emoji} onChange={(e: any) => setFfForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} /></div>
-                  <div><div style={{ fontSize:11, color:'#64748b', marginBottom:5, fontWeight:600 }}>НАЗВА РИБИ *</div><Inp value={ffForm.name} onChange={(e: any) => setFfForm(p => ({ ...p, name: e.target.value }))} placeholder="Короп, Форель, Щука…" onKeyDown={(e: any) => { if (e.key === 'Enter') addFilterFish(); }} /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>EMOJI</div><Inp value={ffForm.emoji} onChange={(e: any) => setFfForm(p => ({ ...p, emoji: e.target.value }))} placeholder="🐟" style={{ textAlign:'center', fontSize:18 }} t={t} /></div>
+                  <div><div style={{ fontSize:11, color:t.textMuted, marginBottom:5, fontWeight:600 }}>НАЗВА РИБИ *</div><Inp value={ffForm.name} onChange={(e: any) => setFfForm(p => ({ ...p, name: e.target.value }))} placeholder="Короп, Форель, Щука…" onKeyDown={(e: any) => { if (e.key === 'Enter') addFilterFish(); }} t={t} /></div>
                 </div>
-                <Btn onClick={addFilterFish} disabled={ffSaving} color="#2563eb" style={{ padding:'10px' }}><PlusIcon /> {ffSaving ? 'Додаємо…' : 'Додати рибу до фільтрів'}</Btn>
+                <Btn onClick={addFilterFish} disabled={ffSaving} color="#2563eb" style={{ padding:'10px' }} t={t}><PlusIcon /> {ffSaving ? 'Додаємо…' : 'Додати рибу до фільтрів'}</Btn>
               </>
             )}
           </div>
-          <SectionDivider label={`Усього: ${filterFish.length}`} />
+          <SectionDivider label={`Усього: ${filterFish.length}`} t={t} />
           <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:14, maxHeight:360, overflowY:'auto' }}>
             {filterFish.length === 0 ? (
-              <div style={{ textAlign:'center', width:'100%', padding:'28px 16px', color:'#94a3b8' }}><div style={{ fontSize:26, marginBottom:6 }}>🐟</div><div style={{ fontSize:13 }}>Риб для фільтрів ще немає</div></div>
+              <div style={{ textAlign:'center', width:'100%', padding:'28px 16px', color:t.textSubtle }}><div style={{ fontSize:26, marginBottom:6 }}>🐟</div><div style={{ fontSize:13 }}>Риб для фільтрів ще немає</div></div>
             ) : filterFish.map((ff: any) => (
-              <div key={ff._id} style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 12px 6px 8px', borderRadius:20, border:'1px solid #e2e8f0', background:'white' }}>
+              <div key={ff._id} style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 12px 6px 8px', borderRadius:20, border:`1px solid ${t.border}`, background:t.bgCard }}>
                 <span style={{ fontSize:16 }}>{ff.emoji || '🐟'}</span>
-                <span style={{ fontSize:13, fontWeight:500, color:'#1e293b' }}>{ff.name}</span>
-                <button onClick={() => setEditingFf({ ...ff })} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0, display:'flex', marginLeft:2, transition:'color 0.15s' }} onMouseEnter={(e: any) => e.currentTarget.style.color = '#2563eb'} onMouseLeave={(e: any) => e.currentTarget.style.color = '#94a3b8'}><EditIcon /></button>
-                <button onClick={() => deleteFilterFish(ff._id, ff.name)} style={{ background:'none', border:'none', cursor:'pointer', color:'#94a3b8', padding:0, display:'flex', transition:'color 0.15s' }} onMouseEnter={(e: any) => e.currentTarget.style.color = '#dc2626'} onMouseLeave={(e: any) => e.currentTarget.style.color = '#94a3b8'}><XIcon /></button>
+                <span style={{ fontSize:13, fontWeight:500, color:t.text }}>{ff.name}</span>
+                <button onClick={() => setEditingFf({ ...ff })} style={{ background:'none', border:'none', cursor:'pointer', color:t.textSubtle, padding:0, display:'flex', marginLeft:2, transition:'color 0.15s' }} onMouseEnter={(e: any) => e.currentTarget.style.color = '#2563eb'} onMouseLeave={(e: any) => e.currentTarget.style.color = t.textSubtle}><EditIcon /></button>
+                <button onClick={() => deleteFilterFish(ff._id, ff.name)} style={{ background:'none', border:'none', cursor:'pointer', color:t.textSubtle, padding:0, display:'flex', transition:'color 0.15s' }} onMouseEnter={(e: any) => e.currentTarget.style.color = '#dc2626'} onMouseLeave={(e: any) => e.currentTarget.style.color = t.textSubtle}><XIcon /></button>
               </div>
             ))}
           </div>
         </Card>
       </div>
-      <Card style={{ marginTop:24 }}>
-        <CardHead icon={<SunIcon />} iconBg="#fff7ed" iconColor="#ea580c" title="Сезони ловлі" sub="Вбудовані — не потребують налаштування" />
+      <Card style={{ marginTop:24 }} t={t}>
+        <CardHead icon={<SunIcon />} iconBg={t.bgWarn} iconColor={t.textWarn} title="Сезони ловлі" sub="Вбудовані — не потребують налаштування" t={t} />
         <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
           {[
-            { emoji:'🌱', label:'Весна', desc:'Березень — Травень', color:'#059669', bg:'#f0fdf4', border:'#bbf7d0' },
-            { emoji:'☀️', label:'Літо',  desc:'Червень — Серпень',  color:'#d97706', bg:'#fffbeb', border:'#fde68a' },
-            { emoji:'🍂', label:'Осінь', desc:'Вересень — Листопад', color:'#ea580c', bg:'#fff7ed', border:'#fed7aa' },
-            { emoji:'❄️', label:'Зима',  desc:'Грудень — Лютий',   color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' },
+            { emoji:'🌱', label:'Весна', desc:'Березень — Травень', color:t.textSuccess, bg:t.bgSuccess, border:t.borderSuccess },
+            { emoji:'☀️', label:'Літо',  desc:'Червень — Серпень',  color:t.textWarn,    bg:t.bgWarn,    border:t.borderWarn },
+            { emoji:'🍂', label:'Осінь', desc:'Вересень — Листопад', color:t.textWarn,   bg:t.bgWarn,    border:t.borderWarn },
+            { emoji:'❄️', label:'Зима',  desc:'Грудень — Лютий',   color:t.textInfo,    bg:t.bgInfo,    border:t.borderInfo },
           ].map(s => (
             <div key={s.label} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:12, background:s.bg, border:`1px solid ${s.border}`, flex:'1 1 180px' }}>
               <span style={{ fontSize:24 }}>{s.emoji}</span>
-              <div><div style={{ fontWeight:700, fontSize:14, color:s.color }}>{s.label}</div><div style={{ fontSize:12, color:'#64748b', marginTop:1 }}>{s.desc}</div></div>
+              <div><div style={{ fontWeight:700, fontSize:14, color:s.color }}>{s.label}</div><div style={{ fontSize:12, color:t.textMuted, marginTop:1 }}>{s.desc}</div></div>
             </div>
           ))}
         </div>
       </Card>
-      {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
+      {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} t={t} />}
     </div>
   );
 }
@@ -961,7 +1011,10 @@ function FiltersTab({ authH, showToast }: any) {
 // MAIN ADMIN PANEL
 // ============================================================
 export default function AdminPanel() {
-  // ── ВИПРАВЛЕННЯ: читаємо токен з TOKEN_KEY ('arundo_token') ──
+  // ── Читаємо тему з AppShell ──────────────────────────────────
+  const { theme } = useAppUI();
+  const t = useThemeVars(theme);
+
   const [token, setToken] = useState('');
   const [activeTab, setActiveTab] = useState('water');
   const [waterBodies, setWaterBodies] = useState<any[]>([]);
@@ -984,15 +1037,14 @@ export default function AdminPanel() {
 
   const showToast = useCallback((message: string, type = 'success') => setToast({ message, type }), []);
 
-  // ── ВИПРАВЛЕННЯ: authH тепер завжди читає свіжий токен з TOKEN_KEY ──
   const authH = useCallback(() => {
-    const t = localStorage.getItem(TOKEN_KEY) || token;
-    return { Authorization: `Bearer ${t}` };
+    const tk = localStorage.getItem(TOKEN_KEY) || token;
+    return { Authorization: `Bearer ${tk}` };
   }, [token]);
 
   const loadData = useCallback(async (tok?: string) => {
-    const t = tok || localStorage.getItem(TOKEN_KEY) || token;
-    if (!t) return;
+    const tk = tok || localStorage.getItem(TOKEN_KEY) || token;
+    if (!tk) return;
     try {
       const [wR, fR, sR, wtR, ffR] = await Promise.all([
         fetch(`${API}/api/water`),
@@ -1010,13 +1062,9 @@ export default function AdminPanel() {
     } catch { showToast('Помилка завантаження', 'error'); }
   }, [token, showToast]);
 
-  // ── ВИПРАВЛЕННЯ: завантажуємо токен з TOKEN_KEY ('arundo_token') ──
   useEffect(() => {
-    const t = localStorage.getItem(TOKEN_KEY);
-    if (t) {
-      setToken(t);
-      loadData(t);
-    }
+    const tk = localStorage.getItem(TOKEN_KEY);
+    if (tk) { setToken(tk); loadData(tk); }
   }, []);
 
   const addWater = async () => {
@@ -1094,16 +1142,15 @@ export default function AdminPanel() {
 
   const dominantFishOptions = (filterConfig.filterFish as any[]).map((f: any) => ({ value: f.name, label: `${f.emoji || '🐟'} ${f.name}` }));
 
-  // ── ВИПРАВЛЕННЯ: якщо токен ще не завантажений — показуємо loader ──
   if (!token) {
     return (
       <>
         <style>{CSS_GLOBAL}</style>
-        <div style={{ minHeight:'100vh', background:'#f8fafc', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
-          <div style={{ textAlign:'center', color:'#94a3b8' }}>
+        <div style={{ minHeight:'100vh', background:t.bg, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+          <div style={{ textAlign:'center', color:t.textSubtle }}>
             <div style={{ fontSize:34, marginBottom:12 }}>🎣</div>
-            <div style={{ fontSize:15, fontWeight:600, color:'#64748b' }}>Завантаження адмін-панелі…</div>
-            <div style={{ fontSize:13, marginTop:6, color:'#94a3b8' }}>Якщо сторінка не завантажилась — увійдіть у систему через головну</div>
+            <div style={{ fontSize:15, fontWeight:600, color:t.textMuted }}>Завантаження адмін-панелі…</div>
+            <div style={{ fontSize:13, marginTop:6, color:t.textSubtle }}>Якщо сторінка не завантажилась — увійдіть у систему через головну</div>
           </div>
         </div>
       </>
@@ -1114,14 +1161,14 @@ export default function AdminPanel() {
     return (
       <>
         <style>{CSS_GLOBAL}</style>
-        <div style={{ minHeight:'100vh', background:'#f8fafc', fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
-          <NavBar breadcrumb="Редагування водойми" />
+        <div style={{ minHeight:'100vh', background:t.bg, fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+          <NavBar breadcrumb="Редагування водойми" t={t} />
           <div style={{ maxWidth:1340, margin:'0 auto', padding:'32px 32px 72px', animation:'fadeUp 0.28s ease' }}>
             <EditWaterForm water={editingWater} fishList={fishList} filterConfig={filterConfig} authH={authH} showToast={showToast}
-              onSaved={() => { setEditingWater(null); loadData(); }} onCancel={() => setEditingWater(null)} />
+              onSaved={() => { setEditingWater(null); loadData(); }} onCancel={() => setEditingWater(null)} t={t} />
           </div>
         </div>
-        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+        {toast && <Toast {...toast} onClose={() => setToast(null)} t={t} />}
       </>
     );
   }
@@ -1130,14 +1177,14 @@ export default function AdminPanel() {
     return (
       <>
         <style>{CSS_GLOBAL}</style>
-        <div style={{ minHeight:'100vh', background:'#f8fafc', fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
-          <NavBar breadcrumb="Редагування риби" />
+        <div style={{ minHeight:'100vh', background:t.bg, fontFamily:"'Segoe UI', system-ui, sans-serif" }}>
+          <NavBar breadcrumb="Редагування риби" t={t} />
           <div style={{ maxWidth:1340, margin:'0 auto', padding:'32px 32px 72px', animation:'fadeUp 0.28s ease' }}>
             <EditFishForm fish={editingFish} authH={authH} showToast={showToast}
-              onSaved={() => { setEditingFish(null); loadData(); }} onCancel={() => setEditingFish(null)} />
+              onSaved={() => { setEditingFish(null); loadData(); }} onCancel={() => setEditingFish(null)} t={t} />
           </div>
         </div>
-        {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+        {toast && <Toast {...toast} onClose={() => setToast(null)} t={t} />}
       </>
     );
   }
@@ -1145,78 +1192,82 @@ export default function AdminPanel() {
   return (
     <>
       <style>{CSS_GLOBAL}</style>
-      <div style={{ minHeight:'100vh', background:'#f8fafc', fontFamily:"'Segoe UI', system-ui, sans-serif", color:'#1e293b' }}>
-        <div style={{ background:'white', borderBottom:'1px solid #e2e8f0', padding:'0 32px', display:'flex', alignItems:'center', gap:2, boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div style={{ minHeight:'100vh', background:t.bg, fontFamily:"'Segoe UI', system-ui, sans-serif", color:t.text }}>
+        {/* ── Nav ── */}
+        <div style={{ background:t.navBg, borderBottom:`1px solid ${t.navBorder}`, padding:'0 32px', display:'flex', alignItems:'center', gap:2, boxShadow: theme === 'dark' ? '0 1px 3px rgba(0,0,0,0.4)' : '0 1px 3px rgba(0,0,0,0.04)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:8, padding:'15px 0', marginRight:20 }}>
             <span style={{ fontSize:18 }}>🎣</span>
-            <span style={{ fontWeight:700, fontSize:14, color:'#0f172a', letterSpacing:'0.04em' }}>ARUNDO</span>
-            <span style={{ color:'#d1d5db', margin:'0 6px' }}>/</span>
-            <span style={{ fontSize:13, color:'#64748b', fontWeight:500 }}>Адміністратор</span>
+            <span style={{ fontWeight:700, fontSize:14, color:t.text, letterSpacing:'0.04em' }}>ARUNDO</span>
+            <span style={{ color:t.textSubtle, margin:'0 6px' }}>/</span>
+            <span style={{ fontSize:13, color:t.textMuted, fontWeight:500 }}>Адміністратор</span>
           </div>
           {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display:'flex', alignItems:'center', gap:7, padding:'16px 16px 14px', border:'none', background:'none', cursor:'pointer', color: activeTab === tab.id ? '#2563eb' : '#64748b', fontWeight: activeTab === tab.id ? 600 : 500, fontSize:14, borderBottom:`2px solid ${activeTab === tab.id ? '#2563eb' : 'transparent'}`, transition:'all 0.15s', fontFamily:'inherit' }}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ display:'flex', alignItems:'center', gap:7, padding:'16px 16px 14px', border:'none', background:'none', cursor:'pointer', color: activeTab === tab.id ? '#2563eb' : t.textMuted, fontWeight: activeTab === tab.id ? 600 : 500, fontSize:14, borderBottom:`2px solid ${activeTab === tab.id ? '#2563eb' : 'transparent'}`, transition:'all 0.15s', fontFamily:'inherit' }}>
               {tab.icon} {tab.label}
               {tab.badge !== undefined && (
-                <span style={{ background: activeTab === tab.id ? '#eff6ff' : '#f1f5f9', color: activeTab === tab.id ? '#2563eb' : '#94a3b8', borderRadius:20, padding:'1px 7px', fontSize:11.5, fontWeight:700 }}>{tab.badge}</span>
+                <span style={{ background: activeTab === tab.id ? t.bgChip : t.bgSub, color: activeTab === tab.id ? '#2563eb' : t.textSubtle, borderRadius:20, padding:'1px 7px', fontSize:11.5, fontWeight:700 }}>{tab.badge}</span>
               )}
             </button>
           ))}
         </div>
+
         <div style={{ maxWidth:1340, margin:'0 auto', padding:'32px 32px 72px', animation:'fadeUp 0.28s ease' }}>
+
+          {/* ── WATER TAB ── */}
           {activeTab === 'water' && (
             <div>
               <div style={{ marginBottom:26 }}>
-                <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:'#0f172a', letterSpacing:'-0.02em' }}>Водойми на карті</h1>
-                <p style={{ color:'#64748b', margin:'4px 0 0', fontSize:13.5 }}>Додавайте та керуйте рибальськими водоймами</p>
+                <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:t.text, letterSpacing:'-0.02em' }}>Водойми на карті</h1>
+                <p style={{ color:t.textMuted, margin:'4px 0 0', fontSize:13.5 }}>Додавайте та керуйте рибальськими водоймами</p>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'460px 1fr', gap:22 }}>
-                <Card>
-                  <CardHead icon={<PlusIcon />} iconBg="#eff6ff" iconColor="#2563eb" title="Нова водойма" sub="Заповніть і збережіть" />
+                <Card t={t}>
+                  <CardHead icon={<PlusIcon />} iconBg={t.bgChip} iconColor={t.textInfo} title="Нова водойма" sub="Заповніть і збережіть" t={t} />
                   <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
-                    <Field label="Назва" required><Inp value={wForm.name} onChange={(e: any) => setWF(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє, р. Горинь…" /></Field>
-                    <Field label="Тип водойми">
-                      <Sel value={wForm.waterType} onChange={(e: any) => setWF(p => ({ ...p, waterType: e.target.value }))} placeholder="— Обрати тип —">
-                        {(filterConfig.waterTypes as any[]).map((t: any) => <option key={t._id} value={t.name}>{t.emoji ? `${t.emoji} ${t.name}` : t.name}</option>)}
+                    <Field label="Назва" required t={t}><Inp value={wForm.name} onChange={(e: any) => setWF(p => ({ ...p, name: e.target.value }))} placeholder="Оз. Синє, р. Горинь…" t={t} /></Field>
+                    <Field label="Тип водойми" t={t}>
+                      <Sel value={wForm.waterType} onChange={(e: any) => setWF(p => ({ ...p, waterType: e.target.value }))} placeholder="— Обрати тип —" t={t}>
+                        {(filterConfig.waterTypes as any[]).map((tp: any) => <option key={tp._id} value={tp.name}>{tp.emoji ? `${tp.emoji} ${tp.name}` : tp.name}</option>)}
                       </Sel>
                     </Field>
-                    <Field label="Опис"><Inp as="textarea" value={wForm.description} onChange={(e: any) => setWF(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" /></Field>
-                    <Field label="Координати" required>
-                      <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} />
+                    <Field label="Опис" t={t}><Inp as="textarea" value={wForm.description} onChange={(e: any) => setWF(p => ({ ...p, description: e.target.value }))} placeholder="Розташування, доступ…" t={t} /></Field>
+                    <Field label="Координати" required t={t}>
+                      <CoordModeSelector coordMode={coordMode} setCoordMode={setCoordMode} t={t} />
                       {coordMode === 'manual' ? (
                         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                          <Inp value={wForm.lat} onChange={(e: any) => setWF(p => ({ ...p, lat: e.target.value }))} placeholder="Широта 49.12…" />
-                          <Inp value={wForm.lng} onChange={(e: any) => setWF(p => ({ ...p, lng: e.target.value }))} placeholder="Довгота 25.67…" />
+                          <Inp value={wForm.lat} onChange={(e: any) => setWF(p => ({ ...p, lat: e.target.value }))} placeholder="Широта 49.12…" t={t} />
+                          <Inp value={wForm.lng} onChange={(e: any) => setWF(p => ({ ...p, lng: e.target.value }))} placeholder="Довгота 25.67…" t={t} />
                         </div>
                       ) : (
                         <>
-                          <MapPicker lat={wForm.lat} lng={wForm.lng} onSelect={(la, ln) => setWF(p => ({ ...p, lat: la, lng: ln }))} />
+                          <MapPicker lat={wForm.lat} lng={wForm.lng} onSelect={(la: string, ln: string) => setWF(p => ({ ...p, lat: la, lng: ln }))} />
                           {wForm.lat && wForm.lng && (
-                            <div style={{ marginTop:8, padding:'7px 12px', borderRadius:9, background:'#f0fdf4', border:'1px solid #bbf7d0', color:'#059669', fontSize:12.5, fontWeight:500, display:'flex', alignItems:'center', gap:6 }}>
+                            <div style={{ marginTop:8, padding:'7px 12px', borderRadius:9, background:t.bgSuccess, border:`1px solid ${t.borderSuccess}`, color:t.textSuccess, fontSize:12.5, fontWeight:500, display:'flex', alignItems:'center', gap:6 }}>
                               <CheckIcon /> {wForm.lat}, {wForm.lng}
                             </div>
                           )}
                         </>
                       )}
                     </Field>
-                    <FishTagger value={fishTags} onChange={setFishTags} allFish={fishList} />
+                    <FishTagger value={fishTags} onChange={setFishTags} allFish={fishList} t={t} />
                     {dominantFishOptions.length > 0 && (
-                      <ChipPicker label="Переважаючі риби (фільтри)" options={dominantFishOptions} value={dominantFish} onChange={setDominantFish} colorScheme="blue" />
+                      <ChipPicker label="Переважаючі риби (фільтри)" options={dominantFishOptions} value={dominantFish} onChange={setDominantFish} colorScheme="blue" t={t} />
                     )}
-                    <ChipPicker label="Найкращі сезони" options={SEASON_OPTIONS} value={bestSeasons} onChange={setBestSeasons} colorScheme="green" />
-                    <ImageZone files={wFiles} onChange={setWFiles} label="Фотографії" multiple />
-                    <Btn onClick={addWater} disabled={loading}><PlusIcon /> {loading ? 'Зберігаємо…' : 'Додати водойму'}</Btn>
+                    <ChipPicker label="Найкращі сезони" options={SEASON_OPTIONS} value={bestSeasons} onChange={setBestSeasons} colorScheme="green" t={t} />
+                    <ImageZone files={wFiles} onChange={setWFiles} label="Фотографії" multiple t={t} />
+                    <Btn onClick={addWater} disabled={loading} t={t}><PlusIcon /> {loading ? 'Зберігаємо…' : 'Додати водойму'}</Btn>
                   </div>
                 </Card>
                 <div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14 }}>
-                    <div style={{ fontWeight:700, fontSize:15, color:'#1e293b' }}>Усі водойми</div>
-                    <div style={{ fontSize:13, color:'#94a3b8' }}>{waterBodies.length} об&apos;єктів</div>
+                    <div style={{ fontWeight:700, fontSize:15, color:t.text }}>Усі водойми</div>
+                    <div style={{ fontSize:13, color:t.textSubtle }}>{waterBodies.length} об&apos;єктів</div>
                   </div>
-                  <Card style={{ padding:14 }}>
+                  <Card style={{ padding:14 }} t={t}>
                     {waterBodies.length === 0 ? (
-                      <div style={{ textAlign:'center', padding:'44px 20px', color:'#94a3b8' }}>
+                      <div style={{ textAlign:'center', padding:'44px 20px', color:t.textSubtle }}>
                         <div style={{ fontSize:34, marginBottom:8 }}>🗺️</div>
-                        <div style={{ fontSize:14, fontWeight:500, color:'#64748b' }}>Водойм поки немає</div>
+                        <div style={{ fontSize:14, fontWeight:500, color:t.textMuted }}>Водойм поки немає</div>
                         <div style={{ fontSize:13, marginTop:3 }}>Додайте першу через форму ліворуч</div>
                       </div>
                     ) : (
@@ -1228,16 +1279,17 @@ export default function AdminPanel() {
                             sub={
                               <span style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
                                 <span>{w.location?.coordinates[1]?.toFixed(4)}, {w.location?.coordinates[0]?.toFixed(4)}</span>
-                                {w.waterType && <span style={{ background:'#f0fdf4', color:'#059669', borderRadius:6, padding:'1px 7px', fontSize:11, fontWeight:600 }}>{w.waterType}</span>}
+                                {w.waterType && <span style={{ background:t.bgSuccess, color:t.textSuccess, borderRadius:6, padding:'1px 7px', fontSize:11, fontWeight:600 }}>{w.waterType}</span>}
                                 {w.bestSeasons?.length > 0 && w.bestSeasons.map((s: string) => {
                                   const opt = SEASON_OPTIONS.find(o => o.value === s);
-                                  return <span key={s} style={{ background:'#fffbeb', color:'#d97706', borderRadius:6, padding:'1px 7px', fontSize:11, fontWeight:600 }}>{opt?.label || s}</span>;
+                                  return <span key={s} style={{ background:t.bgWarn, color:t.textWarn, borderRadius:6, padding:'1px 7px', fontSize:11, fontWeight:600 }}>{opt?.label || s}</span>;
                                 })}
                               </span>
                             }
                             tags={w.dominantFish?.length ? w.dominantFish : w.fishSpecies}
                             onEdit={() => setEditingWater(w)}
                             onDelete={() => deleteWater(w._id, w.name)}
+                            t={t}
                           />
                         ))}
                       </div>
@@ -1247,37 +1299,39 @@ export default function AdminPanel() {
               </div>
             </div>
           )}
+
+          {/* ── FISH TAB ── */}
           {activeTab === 'fish' && (
             <div>
               <div style={{ marginBottom:26 }}>
-                <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:'#0f172a', letterSpacing:'-0.02em' }}>Довідник риб</h1>
-                <p style={{ color:'#64748b', margin:'4px 0 0', fontSize:13.5 }}>Інформація про види риб для рибалок</p>
+                <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:t.text, letterSpacing:'-0.02em' }}>Довідник риб</h1>
+                <p style={{ color:t.textMuted, margin:'4px 0 0', fontSize:13.5 }}>Інформація про види риб для рибалок</p>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'420px 1fr', gap:22 }}>
-                <Card>
-                  <CardHead icon={<PlusIcon />} iconBg="#f0fdf4" iconColor="#059669" title="Нова риба" sub="Додайте вид до довідника" />
+                <Card t={t}>
+                  <CardHead icon={<PlusIcon />} iconBg={t.bgSuccess} iconColor={t.textSuccess} title="Нова риба" sub="Додайте вид до довідника" t={t} />
                   <div style={{ display:'flex', flexDirection:'column', gap:15 }}>
-                    <Field label="Назва" required><Inp value={fForm.name} onChange={(e: any) => setFF(p => ({ ...p, name: e.target.value }))} placeholder="Коропа, Окунь, Щука…" /></Field>
-                    <Field label="Наукова назва"><Inp value={fForm.scientificName} onChange={(e: any) => setFF(p => ({ ...p, scientificName: e.target.value }))} placeholder="Cyprinus carpio…" /></Field>
-                    <Field label="Опис"><Inp as="textarea" value={fForm.description} onChange={(e: any) => setFF(p => ({ ...p, description: e.target.value }))} placeholder="Поведінка, наживки, сезон…" /></Field>
+                    <Field label="Назва" required t={t}><Inp value={fForm.name} onChange={(e: any) => setFF(p => ({ ...p, name: e.target.value }))} placeholder="Коропа, Окунь, Щука…" t={t} /></Field>
+                    <Field label="Наукова назва" t={t}><Inp value={fForm.scientificName} onChange={(e: any) => setFF(p => ({ ...p, scientificName: e.target.value }))} placeholder="Cyprinus carpio…" t={t} /></Field>
+                    <Field label="Опис" t={t}><Inp as="textarea" value={fForm.description} onChange={(e: any) => setFF(p => ({ ...p, description: e.target.value }))} placeholder="Поведінка, наживки, сезон…" t={t} /></Field>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                      <Field label="Макс. вага (кг)"><Inp type="number" min="0" step="0.1" value={fForm.maxWeight} onChange={(e: any) => setFF(p => ({ ...p, maxWeight: e.target.value }))} placeholder="15" /></Field>
-                      <Field label="Макс. довжина (см)"><Inp type="number" min="0" value={fForm.maxLength} onChange={(e: any) => setFF(p => ({ ...p, maxLength: e.target.value }))} placeholder="90" /></Field>
+                      <Field label="Макс. вага (кг)" t={t}><Inp type="number" min="0" step="0.1" value={fForm.maxWeight} onChange={(e: any) => setFF(p => ({ ...p, maxWeight: e.target.value }))} placeholder="15" t={t} /></Field>
+                      <Field label="Макс. довжина (см)" t={t}><Inp type="number" min="0" value={fForm.maxLength} onChange={(e: any) => setFF(p => ({ ...p, maxLength: e.target.value }))} placeholder="90" t={t} /></Field>
                     </div>
-                    <ImageZone files={fFile} onChange={f => setFFile(f.slice(-1))} label="Фото риби" multiple={false} />
-                    <Btn onClick={addFish} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)"><PlusIcon /> {loading ? 'Зберігаємо…' : 'Додати до довідника'}</Btn>
+                    <ImageZone files={fFile} onChange={f => setFFile(f.slice(-1))} label="Фото риби" multiple={false} t={t} />
+                    <Btn onClick={addFish} disabled={loading} color="#059669" shadow="rgba(5,150,105,0.2)" t={t}><PlusIcon /> {loading ? 'Зберігаємо…' : 'Додати до довідника'}</Btn>
                   </div>
                 </Card>
                 <div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14 }}>
-                    <div style={{ fontWeight:700, fontSize:15, color:'#1e293b' }}>Довідник</div>
-                    <div style={{ fontSize:13, color:'#94a3b8' }}>{fishList.length} видів</div>
+                    <div style={{ fontWeight:700, fontSize:15, color:t.text }}>Довідник</div>
+                    <div style={{ fontSize:13, color:t.textSubtle }}>{fishList.length} видів</div>
                   </div>
-                  <Card style={{ padding:14 }}>
+                  <Card style={{ padding:14 }} t={t}>
                     {fishList.length === 0 ? (
-                      <div style={{ textAlign:'center', padding:'44px 20px', color:'#94a3b8' }}>
+                      <div style={{ textAlign:'center', padding:'44px 20px', color:t.textSubtle }}>
                         <div style={{ fontSize:34, marginBottom:8 }}>🐟</div>
-                        <div style={{ fontSize:14, fontWeight:500, color:'#64748b' }}>Довідник порожній</div>
+                        <div style={{ fontSize:14, fontWeight:500, color:t.textMuted }}>Довідник порожній</div>
                       </div>
                     ) : (
                       <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:660, overflowY:'auto', paddingRight:2 }}>
@@ -1285,11 +1339,11 @@ export default function AdminPanel() {
                           <Row key={f._id} thumb={f.image?.url} fallback={<FishIcon />} title={f.name} sub={f.scientificName || undefined}
                             extra={(f.maxWeight || f.maxLength) ? (
                               <div style={{ display:'flex', gap:6, marginTop:5 }}>
-                                {f.maxWeight && <span style={{ fontSize:11.5, color:'#64748b', background:'#f1f5f9', borderRadius:6, padding:'2px 8px' }}>⚖️ до {f.maxWeight} кг</span>}
-                                {f.maxLength && <span style={{ fontSize:11.5, color:'#64748b', background:'#f1f5f9', borderRadius:6, padding:'2px 8px' }}>📏 до {f.maxLength} см</span>}
+                                {f.maxWeight && <span style={{ fontSize:11.5, color:t.textMuted, background:t.bgSub, borderRadius:6, padding:'2px 8px' }}>⚖️ до {f.maxWeight} кг</span>}
+                                {f.maxLength && <span style={{ fontSize:11.5, color:t.textMuted, background:t.bgSub, borderRadius:6, padding:'2px 8px' }}>📏 до {f.maxLength} см</span>}
                               </div>
                             ) : null}
-                            onEdit={() => setEditingFish(f)} onDelete={() => deleteFish(f._id, f.name)} />
+                            onEdit={() => setEditingFish(f)} onDelete={() => deleteFish(f._id, f.name)} t={t} />
                         ))}
                       </div>
                     )}
@@ -1298,60 +1352,64 @@ export default function AdminPanel() {
               </div>
             </div>
           )}
+
+          {/* ── FILTERS TAB ── */}
           {activeTab === 'filters' && (
-            <FiltersTab authH={authH} showToast={showToast} />
+            <FiltersTab authH={authH} showToast={showToast} t={t} />
           )}
+
+          {/* ── STATS TAB ── */}
           {activeTab === 'stats' && (
             <div>
               <div style={{ marginBottom:26 }}>
-                <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:'#0f172a', letterSpacing:'-0.02em' }}>Статистика</h1>
-                <p style={{ color:'#64748b', margin:'4px 0 0', fontSize:13.5 }}>Загальна інформація про платформу</p>
+                <h1 style={{ margin:0, fontSize:22, fontWeight:800, color:t.text, letterSpacing:'-0.02em' }}>Статистика</h1>
+                <p style={{ color:t.textMuted, margin:'4px 0 0', fontSize:13.5 }}>Загальна інформація про платформу</p>
               </div>
               {stats ? (
                 <>
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:18, marginBottom:24 }}>
                     {[
-                      { label:'Водойм на карті',    val:stats.total_water_bodies, emoji:'🗺️', color:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' },
-                      { label:'Видів у довіднику',  val:stats.total_fish_species,  emoji:'🐟', color:'#059669', bg:'#f0fdf4', border:'#bbf7d0' },
-                      { label:'Типів водойм',        val:(filterConfig.waterTypes as any[]).length, emoji:'💧', color:'#ea580c', bg:'#fff7ed', border:'#fed7aa' },
-                      { label:'Користувачів',        val:stats.total_users,          emoji:'👥', color:'#7c3aed', bg:'#f5f3ff', border:'#ddd6fe' },
+                      { label:'Водойм на карті',    val:stats.total_water_bodies, emoji:'🗺️', color:t.textInfo,    bg:t.bgChip,    border:t.borderInfo },
+                      { label:'Видів у довіднику',  val:stats.total_fish_species,  emoji:'🐟', color:t.textSuccess, bg:t.bgSuccess, border:t.borderSuccess },
+                      { label:'Типів водойм',        val:(filterConfig.waterTypes as any[]).length, emoji:'💧', color:t.textWarn, bg:t.bgWarn, border:t.borderWarn },
+                      { label:'Користувачів',        val:stats.total_users, emoji:'👥', color:'#7c3aed', bg: theme === 'dark' ? '#2e1065' : '#f5f3ff', border: theme === 'dark' ? '#4c1d95' : '#ddd6fe' },
                     ].map(s => (
                       <div key={s.label} style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:18, padding:'24px 26px' }}>
                         <div style={{ fontSize:30, marginBottom:10 }}>{s.emoji}</div>
                         <div style={{ fontSize:40, fontWeight:900, color:s.color, letterSpacing:'-0.04em', lineHeight:1 }}>{s.val}</div>
-                        <div style={{ fontSize:13.5, color:'#64748b', marginTop:8, fontWeight:500 }}>{s.label}</div>
+                        <div style={{ fontSize:13.5, color:t.textMuted, marginTop:8, fontWeight:500 }}>{s.label}</div>
                       </div>
                     ))}
                   </div>
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
-                    <Card>
-                      <div style={{ fontWeight:700, fontSize:15, marginBottom:18, color:'#1e293b' }}>Останні водойми</div>
-                      {waterBodies.length === 0 && <div style={{ color:'#94a3b8', fontSize:13 }}>Немає водойм</div>}
+                    <Card t={t}>
+                      <div style={{ fontWeight:700, fontSize:15, marginBottom:18, color:t.text }}>Останні водойми</div>
+                      {waterBodies.length === 0 && <div style={{ color:t.textSubtle, fontSize:13 }}>Немає водойм</div>}
                       {waterBodies.slice(0, 6).map((w: any, i: number) => (
-                        <div key={w._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom: i < Math.min(5, waterBodies.length-1) ? '1px solid #f1f5f9' : 'none' }}>
+                        <div key={w._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom: i < Math.min(5, waterBodies.length-1) ? `1px solid ${t.border}` : 'none' }}>
                           <div>
-                            <div style={{ fontSize:14, fontWeight:500, color:'#334155' }}>{w.name}</div>
-                            {w.waterType && <div style={{ fontSize:11, color:'#64748b' }}>{w.waterType}</div>}
+                            <div style={{ fontSize:14, fontWeight:500, color:t.text }}>{w.name}</div>
+                            {w.waterType && <div style={{ fontSize:11, color:t.textMuted }}>{w.waterType}</div>}
                           </div>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <div style={{ fontSize:12, color:'#94a3b8' }}>{w.fishSpecies?.length || 0} видів</div>
-                            <button onClick={() => { setActiveTab('water'); setTimeout(() => setEditingWater(w), 50); }} style={{ background:'#eff6ff', border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:'#2563eb', fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
+                            <div style={{ fontSize:12, color:t.textSubtle }}>{w.fishSpecies?.length || 0} видів</div>
+                            <button onClick={() => { setActiveTab('water'); setTimeout(() => setEditingWater(w), 50); }} style={{ background:t.bgChip, border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:t.textInfo, fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
                           </div>
                         </div>
                       ))}
                     </Card>
-                    <Card>
-                      <div style={{ fontWeight:700, fontSize:15, marginBottom:18, color:'#1e293b' }}>Довідник риб</div>
-                      {fishList.length === 0 && <div style={{ color:'#94a3b8', fontSize:13 }}>Порожньо</div>}
+                    <Card t={t}>
+                      <div style={{ fontWeight:700, fontSize:15, marginBottom:18, color:t.text }}>Довідник риб</div>
+                      {fishList.length === 0 && <div style={{ color:t.textSubtle, fontSize:13 }}>Порожньо</div>}
                       {fishList.slice(0, 6).map((f: any, i: number) => (
-                        <div key={f._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom: i < Math.min(5, fishList.length-1) ? '1px solid #f1f5f9' : 'none' }}>
+                        <div key={f._id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom: i < Math.min(5, fishList.length-1) ? `1px solid ${t.border}` : 'none' }}>
                           <div>
-                            <div style={{ fontSize:14, fontWeight:500, color:'#334155' }}>{f.name}</div>
-                            {f.scientificName && <div style={{ fontSize:11, color:'#94a3b8', fontStyle:'italic' }}>{f.scientificName}</div>}
+                            <div style={{ fontSize:14, fontWeight:500, color:t.text }}>{f.name}</div>
+                            {f.scientificName && <div style={{ fontSize:11, color:t.textSubtle, fontStyle:'italic' }}>{f.scientificName}</div>}
                           </div>
                           <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <div style={{ fontSize:12, color:'#94a3b8' }}>{f.maxWeight ? `≤${f.maxWeight} кг` : '—'}</div>
-                            <button onClick={() => { setActiveTab('fish'); setTimeout(() => setEditingFish(f), 50); }} style={{ background:'#f0fdf4', border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:'#059669', fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
+                            <div style={{ fontSize:12, color:t.textSubtle }}>{f.maxWeight ? `≤${f.maxWeight} кг` : '—'}</div>
+                            <button onClick={() => { setActiveTab('fish'); setTimeout(() => setEditingFish(f), 50); }} style={{ background:t.bgSuccess, border:'none', borderRadius:7, padding:'4px 8px', cursor:'pointer', color:t.textSuccess, fontSize:11, fontWeight:600, fontFamily:'inherit' }}>Ред.</button>
                           </div>
                         </div>
                       ))}
@@ -1359,7 +1417,7 @@ export default function AdminPanel() {
                   </div>
                 </>
               ) : (
-                <div style={{ textAlign:'center', padding:72, color:'#94a3b8' }}>
+                <div style={{ textAlign:'center', padding:72, color:t.textSubtle }}>
                   <div style={{ fontSize:34, marginBottom:8 }}>📊</div>
                   <div style={{ fontSize:14 }}>Завантаження статистики…</div>
                 </div>
@@ -1368,20 +1426,20 @@ export default function AdminPanel() {
           )}
         </div>
       </div>
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
-      {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} />}
+      {toast && <Toast {...toast} onClose={() => setToast(null)} t={t} />}
+      {confirm && <ConfirmModal message={confirm.message} onConfirm={confirm.onConfirm} onCancel={() => setConfirm(null)} t={t} />}
     </>
   );
 }
 
-function NavBar({ breadcrumb }: { breadcrumb: string }) {
+function NavBar({ breadcrumb, t }: { breadcrumb: string; t: ReturnType<typeof useThemeVars> }) {
   return (
-    <div style={{ background:'white', borderBottom:'1px solid #e2e8f0', padding:'0 32px', display:'flex', alignItems:'center', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
+    <div style={{ background:t.navBg, borderBottom:`1px solid ${t.navBorder}`, padding:'0 32px', display:'flex', alignItems:'center', boxShadow:'0 1px 3px rgba(0,0,0,0.04)' }}>
       <div style={{ display:'flex', alignItems:'center', gap:8, padding:'15px 0' }}>
         <span style={{ fontSize:18 }}>🎣</span>
-        <span style={{ fontWeight:700, fontSize:14, color:'#0f172a', letterSpacing:'0.04em' }}>ARUNDO</span>
-        <span style={{ color:'#d1d5db', margin:'0 6px' }}>/</span>
-        <span style={{ fontSize:13, color:'#64748b', fontWeight:500 }}>{breadcrumb}</span>
+        <span style={{ fontWeight:700, fontSize:14, color:t.text, letterSpacing:'0.04em' }}>ARUNDO</span>
+        <span style={{ color:t.textSubtle, margin:'0 6px' }}>/</span>
+        <span style={{ fontSize:13, color:t.textMuted, fontWeight:500 }}>{breadcrumb}</span>
       </div>
     </div>
   );
@@ -1391,8 +1449,7 @@ const CSS_GLOBAL = `
   * { box-sizing: border-box; }
   @keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeUp  { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  input:focus, textarea:focus, select:focus { border-color:#2563eb!important; box-shadow:0 0 0 3px rgba(37,99,235,0.1)!important; outline:none; }
-  input::placeholder, textarea::placeholder { color:#cbd5e1; }
+  input:focus, textarea:focus, select:focus { outline:none; }
   ::-webkit-scrollbar { width:5px; }
-  ::-webkit-scrollbar-thumb { background:#e2e8f0; border-radius:3px; }
+  ::-webkit-scrollbar-thumb { background:#334155; border-radius:3px; }
 `;
