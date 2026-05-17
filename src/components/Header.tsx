@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, LogOut, Search, Settings2, Shield, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Settings2, Shield, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -120,17 +120,10 @@ export function Header({
           </span>
         </Link>
 
+        {/* Проміжок залишається, але без пошуку */}
         <div className="flex min-w-0 flex-1 items-center gap-4">
-          <label className="relative min-w-0 flex-1 max-w-2xl">
-            <span className="sr-only">{copy.header.searchPlaceholder}</span>
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="search"
-              placeholder={copy.header.searchPlaceholder}
-              className="h-12 w-full rounded-full border border-transparent bg-slate-100 pl-11 pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-200 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-900"
-            />
-          </label>
-
+          {/* Пошук видалено - проміжок залишається порожнім */}
+          
           <nav className="hidden items-center justify-center gap-8 whitespace-nowrap lg:flex">
             {visibleNavigationItems.map((item: HeaderNavigationItem) => {
               const isActive = item.label === currentActiveLabel;
