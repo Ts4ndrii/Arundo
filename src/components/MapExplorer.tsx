@@ -111,7 +111,6 @@ function MapFocus({ center }: { center: LatLngExpression }) {
   return null;
 }
 
-// ── ВИПРАВЛЕНО: додано dark-класи до SpotPill ──────────────────
 function SpotPill({
   spot,
   active,
@@ -254,13 +253,10 @@ export default function MapExplorer() {
     }
   }, [selectedSpot, mapInstance]);
 
-  const tileLayerUrl = theme === "dark"
-    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-
-  const tileLayerAttribution = theme === "dark"
-    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  // Єдиний OSM тайл для обох тем — підписи завжди українською.
+  // У темному режимі застосовується CSS-фільтр через клас map-tiles-dark.
+  const tileLayerUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const tileLayerAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
   const handleLocateUser = () => {
     if (!navigator.geolocation) {
@@ -429,7 +425,19 @@ export default function MapExplorer() {
                 className="h-full w-full"
                 ref={setMapInstance}
               >
-                <TileLayer attribution={tileLayerAttribution} url={tileLayerUrl} />
+                {/*
+                  Використовуємо єдиний OSM тайл для обох тем.
+                  У темному режимі додається CSS-клас map-tiles-dark,
+                  який у globals.css застосовує фільтр:
+                    filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.9);
+                  Це робить карту темною, але зберігає українські підписи
+                  на всіх рівнях зуму.
+                */}
+                <TileLayer
+                  attribution={tileLayerAttribution}
+                  url={tileLayerUrl}
+                  className={theme === "dark" ? "map-tiles-dark" : undefined}
+                />
                 {filteredSpots.map((spot) => (
                   <Marker
                     key={spot.id}

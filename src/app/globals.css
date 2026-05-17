@@ -185,3 +185,7 @@ html.dark .modal-scrollbar {
 html.dark .modal-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(100, 116, 139, 0.85);
 }
+
+.map-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.9);
+}
