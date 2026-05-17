@@ -178,11 +178,11 @@ export function Header({
     setIsSearchOpen(false);
     setSearchQuery("");
     setSearchResults([]);
-    
+
     if (result.type === "water") {
-      router.push(`/wiki?water=${result.id}`);
+      window.location.href = `/wiki?water=${result.id}`;
     } else {
-      router.push(`/wiki?fish=${result.id}`);
+      window.location.href = `/wiki?fish=${result.id}`;
     }
   };
 
@@ -218,7 +218,7 @@ export function Header({
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                type="search"
+                type="text"
                 placeholder={copy.header.searchPlaceholder || "Пошук водойм, риб..."}
                 value={searchQuery}
                 onChange={(e) => {
@@ -418,4 +418,4 @@ export function Header({
   );
 }
 
-export default Header; 
+export default Header;
