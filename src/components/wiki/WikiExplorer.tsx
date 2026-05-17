@@ -226,7 +226,13 @@ function FilterSection({
   );
 }
 
-export function WikiExplorer({ initialWaterId = null }: { initialWaterId?: string | null }) {
+export function WikiExplorer({
+  initialWaterId = null,
+  initialFishId = null,
+}: {
+  initialWaterId?: string | null;
+  initialFishId?: string | null;
+}) {
   const { language, favoriteWaterIds, toggleFavorite } = useAppUI();
   const copy = getUiCopy(language);
 
@@ -332,7 +338,8 @@ export function WikiExplorer({ initialWaterId = null }: { initialWaterId?: strin
     const handlePopState = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const waterId = urlParams.get('water');
-      if (!waterId) {
+      const fishId = urlParams.get('fish');
+      if (!waterId && !fishId) {
         setSelectedItem(null);
         setCatalogType("fish");
         setCurrentImageIndex(0);
@@ -343,6 +350,7 @@ export function WikiExplorer({ initialWaterId = null }: { initialWaterId?: strin
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Відкриваємо водойму за initialWaterId
   useEffect(() => {
     if (!initialSelectedDone && initialWaterId && waterCards.length > 0 && !selectedItem) {
       const water = waterCards.find(w => w.id === initialWaterId);
@@ -354,6 +362,18 @@ export function WikiExplorer({ initialWaterId = null }: { initialWaterId?: strin
       }
     }
   }, [initialWaterId, waterCards, selectedItem, initialSelectedDone]);
+
+  // Відкриваємо рибу за initialFishId
+  useEffect(() => {
+    if (!initialSelectedDone && initialFishId && fishCards.length > 0 && !selectedItem) {
+      const fish = fishCards.find(f => f.id === initialFishId);
+      if (fish) {
+        setCatalogType("fish");
+        setSelectedItem({ kind: "fish", item: fish });
+        setInitialSelectedDone(true);
+      }
+    }
+  }, [initialFishId, fishCards, selectedItem, initialSelectedDone]);
 
   useEffect(() => {
     setCurrentImageIndex(0);
@@ -367,7 +387,7 @@ export function WikiExplorer({ initialWaterId = null }: { initialWaterId?: strin
     setCurrentImageIndex(0);
   };
 
-    const handleBackToWaterList = () => {
+  const handleBackToWaterList = () => {
     setSelectedItem(null);
     setCatalogType("water");
     window.history.pushState({}, '', '/wiki');
