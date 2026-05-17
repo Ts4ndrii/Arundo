@@ -371,7 +371,6 @@ export function WikiExplorer({ initialWaterId = null }: { initialWaterId?: strin
     setSelectedItem(null);
     setCatalogType("water");
     window.history.pushState({}, '', '/wiki');
-    setInitialSelectedDone(false);
     setCurrentImageIndex(0);
   };
 
