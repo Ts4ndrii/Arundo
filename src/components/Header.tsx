@@ -178,15 +178,11 @@ export function Header({
     setIsSearchOpen(false);
     setSearchQuery("");
     setSearchResults([]);
-    
-    // Для риби використовуємо той самий параметр water, бо в WikiExplorer немає обробки fish
-    // Просто відкриваємо wiki без параметра, або з параметром
+
     if (result.type === "water") {
       window.location.href = `/wiki?water=${result.id}`;
     } else {
-      // Для риби - просто відкриваємо wiki, але з параметром fish (якщо WikiExplorer його підтримує)
-      // Або можна відкрити wiki з параметром name для пошуку
-      window.location.href = `/wiki?search=${encodeURIComponent(result.name)}`;
+      window.location.href = `/wiki?fish=${result.id}`;
     }
   };
 
@@ -222,7 +218,7 @@ export function Header({
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                type="search"
+                type="text"
                 placeholder={copy.header.searchPlaceholder || "Пошук водойм, риб..."}
                 value={searchQuery}
                 onChange={(e) => {
