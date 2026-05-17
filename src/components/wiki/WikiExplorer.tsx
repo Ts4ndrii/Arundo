@@ -362,16 +362,16 @@ export function WikiExplorer({ initialWaterId = null }: { initialWaterId?: strin
   const handleBackToList = () => {
     setSelectedItem(null);
     setCatalogType("fish");
-    window.history.pushState({}, '', '/wiki');
-    setInitialSelectedDone(false);
+    // Використовуємо router замість pushState
+    window.location.href = '/wiki';
     setCurrentImageIndex(0);
   };
 
   const handleBackToWaterList = () => {
     setSelectedItem(null);
     setCatalogType("water");
-    window.history.pushState({}, '', '/wiki');
-    setInitialSelectedDone(false);
+    // Використовуємо router замість pushState
+    window.location.href = '/wiki';
     setCurrentImageIndex(0);
   };
 
