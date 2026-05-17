@@ -179,21 +179,14 @@ export function Header({
     setSearchQuery("");
     setSearchResults([]);
     
-    // Використовуємо router.push з повним перезавантаженням через window.location для wiki
-    if (pathname === "/wiki") {
-      // Якщо ми вже на wiki, використовуємо window.location для примусового оновлення
-      if (result.type === "water") {
-        window.location.href = `/wiki?water=${result.id}`;
-      } else {
-        window.location.href = `/wiki?fish=${result.id}`;
-      }
+    // Для риби використовуємо той самий параметр water, бо в WikiExplorer немає обробки fish
+    // Просто відкриваємо wiki без параметра, або з параметром
+    if (result.type === "water") {
+      window.location.href = `/wiki?water=${result.id}`;
     } else {
-      // Якщо на іншій сторінці, використовуємо звичайний router
-      if (result.type === "water") {
-        router.push(`/wiki?water=${result.id}`);
-      } else {
-        router.push(`/wiki?fish=${result.id}`);
-      }
+      // Для риби - просто відкриваємо wiki, але з параметром fish (якщо WikiExplorer його підтримує)
+      // Або можна відкрити wiki з параметром name для пошуку
+      window.location.href = `/wiki?search=${encodeURIComponent(result.name)}`;
     }
   };
 
