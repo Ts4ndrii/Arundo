@@ -252,10 +252,10 @@ export default function ProfilePageContent() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const getToken = () =>
-    typeof window !== "undefined"
-      ? localStorage.getItem("adminToken") || localStorage.getItem("userToken")
-      : null;
+  const getToken = () => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("arundo_token");
+  };
 
   // ── Завантажити улюблені з БД один раз при монтуванні ───────────────────
   // Оновлюємо AppShell — після цього favoriteWaterIds є єдиним джерелом правди
