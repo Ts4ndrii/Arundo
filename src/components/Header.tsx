@@ -1,12 +1,22 @@
 "use client";
 
-import { ChevronDown, LogOut, Settings2, Shield, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Search, Settings2, Shield, UserRound, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useCallback } from "react";
 import headerLogo from "../../pictures/Main logo.png";
 import { getUiCopy, type LanguageCode } from "@/lib/ui-copy";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+type SearchResult = {
+  type: "water" | "fish";
+  id: string;
+  name: string;
+  subtitle?: string;
+  image?: string;
+};
 
 export type HeaderNavigationItem = {
   label: string;
@@ -67,32 +77,114 @@ export function Header({
   className,
 }: HeaderProps) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const copy = getUiCopy(language);
   const visibleNavigationItems = navigationItems.length > 0 ? navigationItems : copy.header.navigationItems;
   const currentActiveLabel = activeLabel ?? getActiveLabelFromPathname(pathname, copy.header.activeLabels) ?? copy.header.activeLabels["/"];
   const isAdmin = user?.role === "admin";
 
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      const targetNode = event.target as Node | null;
+  // Пошук водойм та риб
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
 
-      if (profileMenuRef.current && targetNode && !profileMenuRef.current.contains(targetNode)) {
+    setIsSearching(true);
+    try {
+      const [waterRes, fishRes] = await Promise.all([
+        fetch(`${API_URL}/api/water`),
+        fetch(`${API_URL}/api/fish`)
+      ]);
+
+      const waterData = await waterRes.json();
+      const fishData = await fishRes.json();
+
+      const waterResults: SearchResult[] = (Array.isArray(waterData) ? waterData : [])
+        .filter((w: any) => w.name.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 5)
+        .map((w: any) => ({
+          type: "water",
+          id: w._id,
+          name: w.name,
+          subtitle: w.waterType || "Водойма",
+          image: w.images?.[0]?.url,
+        }));
+
+      const fishResults: SearchResult[] = (Array.isArray(fishData) ? fishData : [])
+        .filter((f: any) => f.name.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 5)
+        .map((f: any) => ({
+          type: "fish",
+          id: f._id,
+          name: f.name,
+          subtitle: f.scientificName || "Риба",
+          image: f.image?.url,
+        }));
+
+      setSearchResults([...waterResults, ...fishResults].slice(0, 10));
+    } catch (error) {
+      console.error("Помилка пошуку:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Дебаунс для пошуку
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, performSearch]);
+
+  // Закриття результатів при кліку поза
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
     setIsProfileMenuOpen(false);
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
   }, [pathname]);
+
+  const handleResultClick = (result: SearchResult) => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    
+    if (result.type === "water") {
+      router.push(`/wiki?water=${result.id}`);
+    } else {
+      router.push(`/wiki?fish=${result.id}`);
+    }
+  };
 
   const rootClassName = [
     "sticky top-0 z-[1100] border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/90",
@@ -120,10 +212,81 @@ export function Header({
           </span>
         </Link>
 
-        {/* Проміжок залишається, але без пошуку */}
-        <div className="flex min-w-0 flex-1 items-center gap-4">
-          {/* Пошук видалено - проміжок залишається порожнім */}
-          
+        <div className="flex min-w-0 flex-1 items-center gap-4" ref={searchRef}>
+          {/* Пошук з результатами */}
+          <div className="relative min-w-0 flex-1 max-w-2xl">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="search"
+                placeholder={copy.header.searchPlaceholder || "Пошук водойм, риб..."}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(true);
+                }}
+                onFocus={() => setIsSearchOpen(true)}
+                className="h-12 w-full rounded-full border border-slate-200 bg-slate-100 pl-11 pr-10 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-600/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:bg-slate-800"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setIsSearchOpen(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:hover:bg-slate-700"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Випадаючий список результатів */}
+            {isSearchOpen && (searchQuery || searchResults.length > 0 || isSearching) && (
+              <div className="absolute left-0 right-0 top-full z-[1200] mt-2 max-h-96 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                {isSearching ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div>
+                    {searchResults.map((result) => (
+                      <button
+                        key={`${result.type}-${result.id}`}
+                        type="button"
+                        onClick={() => handleResultClick(result)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
+                          {result.type === "water" ? (
+                            <span className="text-lg">💧</span>
+                          ) : (
+                            <span className="text-lg">🐟</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            {result.name}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                            {result.type === "water" ? "Водойма" : "Риба"} • {result.subtitle}
+                          </div>
+                        </div>
+                        <span className="text-xs text-slate-400">→</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : searchQuery && (
+                  <div className="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                    Нічого не знайдено
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <nav className="hidden items-center justify-center gap-8 whitespace-nowrap lg:flex">
             {visibleNavigationItems.map((item: HeaderNavigationItem) => {
               const isActive = item.label === currentActiveLabel;
@@ -210,7 +373,6 @@ export function Header({
                     {copy.header.settings}
                   </button>
                   
-                  {/* Кнопка адмін-панелі - видно тільки для admin */}
                   {isAdmin && (
                     <button
                       type="button"
